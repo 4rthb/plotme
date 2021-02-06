@@ -8,8 +8,8 @@ class plot:
     def __init__(self):
         self.parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
         self.parser.add_argument("-f","--fileName", help="Name of the file that will provide data for the graph", required=True)
-        self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind")
-        self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line")
+        self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
+        self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line", choices=['line', 'pie', 'bar', 'scatter'])
         self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
         self.parser.add_argument("-x", "--x", help="The abscissa of the graph", default=0)
         self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default=(1))
@@ -26,4 +26,5 @@ class plot:
         self.args = self.parser.parse_args()
 
 if __name__ == "__main__":
-    plot().main()
+    instance = plot()
+    print(instance.args)

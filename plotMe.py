@@ -2,12 +2,14 @@ import matplotlib.pyplot as plt
 import seaborn
 import pandas as pd
 import argparse
+import re
 
 class plot:
 
     def __init__(self):
+        #parses arguments
         self.parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
-        self.parser.add_argument("-f","--fileName", help="Name of the file that will provide data for the graph", required=True)
+        self.parser.add_argument("-f","--fileName", help="Name of the file that will provide data for the graph: name.extension", required=True)
         self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line", choices=['line', 'pie', 'bar', 'scatter'])
         self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
@@ -25,6 +27,44 @@ class plot:
         self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s)", default=None)
         self.args = self.parser.parse_args()
 
+    def fileWise(self):
+        outName = self.args.output
+        fName = self.args.fileName
+
+        def exportFile(outName,fName):
+            pattern1 = re.compile('^\.\w+')
+            pattern2 = re.compile('^.+\.\w+')
+
+            if pattern1.match(outName):
+                #only the extension
+                if pattern2.match(fName):
+                    #checks if the fileName contains an extension
+                    [fName, ext] = fName.split('.')
+
+                outName=outName.replace(".","")
+
+                if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)",outName):
+                    #search if given extension is supported
+                    plt.savefig(fName+'Plot.'+outName, bbox_inches="tight")
+                else:
+                    print("Extension not supported")
+
+            elif pattern2.match(outName):
+                #extension and name
+                [outName, ext] = outName.split('.')
+                if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)",ext):
+                    #search if given extension is supported
+                    plt.savefig(outName+'.'+ext, bbox_inches="tight")
+                else:
+                    print("Extension not supported")
+
+            else:
+                plt.savefig(outName+'.pdf', bbox_inches="tight")
+
+
+
+        exportFile(outName,fName)
+
 if __name__ == "__main__":
     instance = plot()
-    print(instance.args)
+    print(instance.fileWise())

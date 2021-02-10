@@ -145,37 +145,73 @@ class Plot:
         self.y = values
 
 
-    def exportFile(self,outName,fName):
-        pattern1 = re.compile('^\.\w+')
-        pattern2 = re.compile('^.+\.\w+')
+    def exportFile(self):
 
-        if pattern1.match(outName):
-            #only the extension
-            if pattern2.match(fName):
+        outName=self.output
+        fName=self.fileName
+
+        #defines regex`s that search specific combinations
+        containsExt = re.compile('^\.\w+')
+        containsNameExt = re.compile('^.+\.\w+')
+        containsPath1 = re.compile('\\.+')
+        containsPath2 = re.compile('/')
+
+        #if the variable was used
+        if outName != '.pdf':
+
+            path=''
+            #if the file name cointains a file path, then it`s separated into a differente variable
+            if containsPath1.match(fName) or containsPath2.match(fName):
+                removeName = fName
+                while removeName[-1] != '/' and removeName[-1] != '\\' and removeName != '':
+                    print(removeName)
+
+                    removeName = removeName[:-1]
+                if removeName != '':
+                    path = removeName
+
+            #if the output name only contains the extension
+            if containsExt.match(outName):
                 #checks if the fileName contains an extension
-                [fName, ext] = fName.split('.')
+                if containsNameExt.match(fName):
+                    removeName = fName
+                    #removes the extension from filename
+                    while removeName[-1] != '.' and removeName != '':
+                        removeName = removeName[:-1]
+                    if removeName[-1] == '.':
+                        removeName = removeName[:-1]
+                    if removeName != '':
+                        fName = removeName
+                newName=fName
+                ext=outName.replace(".","")
+                add = 'Plot.'
 
-            outName=outName.replace(".","")
+            #if the output name contains an extension and a name
+            elif containsNameExt.match(outName):
+                [newName, ext] = outName.split('.')
+                add = '.'
+                newName = path + newName
 
-            if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)",outName):
-                #search if given extension is supported
-                plt.savefig(fName+'Plot.'+outName, bbox_inches="tight")
-            else:
-                print("Extension not supported")
-
-        elif pattern2.match(outName):
-            #extension and name
-            [outName, ext] = outName.split('.')
-            if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)",ext):
-                #search if given extension is supported
-                plt.savefig(outName+'.'+ext, bbox_inches="tight")
+            #search if given extension is supported
+            if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)$", ext):
+                plt.savefig(newName + add + ext, bbox_inches="tight")
             else:
                 print("Extension not supported")
 
         else:
-            plt.savefig(outName+'.pdf', bbox_inches="tight")
+            #checks if the fileName contains an extension
+            if containsNameExt.match(fName):
+                #removes the extension from filename
+                rmvName = fName
+                while rmvName[-1] != '.' and rmvName != '':
+                    rmvName = rmvName[:-1]
+                if rmvName[-1] == '.':
+                    rmvName = rmvName[:-1]
+                if rmvName != '':
+                    fName=rmvName
+            plt.savefig(fName+'Plot'+outName, bbox_inches="tight")
 
 
 if __name__ == "__main__":
     instance = Plot(cmd=True)
-    instance.importFile()
+    instance.exportFile()

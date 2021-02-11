@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import seaborn
+import seaborn as sns
 import pandas as pd
 import argparse
 import re
@@ -30,7 +30,7 @@ class Plot:
         else:
             # if it is called by another program
             self.fileName = fileName
-            self.setPalette = setPalette 
+            self.Palette = setPalette 
             self.graphType = graphType
             self.output = output 
             self.x = x 
@@ -70,7 +70,7 @@ class Plot:
         # and put the values in the class variables
         args = self.parser.parse_args()
         self.fileName = args.fileName
-        self.setPalette = args.setPalette 
+        self.Palette = args.setPalette 
         self.graphType = args.graphType
         self.output = args.output 
         self.x = args.x 
@@ -87,28 +87,77 @@ class Plot:
         self.yLabel = args.yLabel
 
 
-    def importFile(self):
-        fileName = self.fileName
-        print(fileName)
-        
-        if type(fileName) == str:
-            sep=' '
-            if ',' in fileName:
-                sep = ','
-            
-            fileName = fileName.split(sep)
+    def plotGraph(self):
+        # get the files to be plot
+        files = self.importFile()
+        # get the name of the files
+        inputNames = self.parseInput()
+        # get the color palette
+        colors = self.getPalette()
+        # get the output names
+        outputNames = self.parseOutput(len(files))
+        # get the axis
+        self.defineAxis()
 
-        handlers = []
-        for files in fileName:
-            name, ext = files.split('.')
+        # plot each file individually
+        for count, f in enumerate(files):
+
+            columns = f.columns
+            yAxis = [ columns[ind] for ind in self.y ]
+
+            # make the correct type of graph
+            if self.graphType == 'line':
+                f.plot(x=columns[self.x], y=yAxis, color=colors)
+            elif self.graphType == 'pie':
+                pass
+            elif self.graphType == 'bar':
+                pass
+            elif self.graphType == 'scatter':
+                pass
             
-            if ext:
-                # opens a single file
-                pass
-            else:
-                # opens a full directory
-                pass
+            # finally, export the files
+            self.exportFile(outputNames[count], inputNames[count])
+
+
+    def openFile(self, name, ext):
+        if ext == 'csv':
+            df = pd.read_csv(f'{name}.{ext}')
+            return df
+        else:
+            raise Exception('File type not supported')
+
+    def getPalette(self):
+        '''
+        deep, muted, pastel, bright, dark, and colorblind
+        '''
+        return sns.color_palette(self.Palette)
+
+    def parseInput(self):
+        fileName = self.fileName
+
+        # if the fileName came from the command line, transform it to a list
+        if type(fileName) == str:
+            fileName = fileName.split(',')
         
+        # otherwise, there's nothing to be done
+
+        return fileName
+
+    def parseOutput(self, arrayLen):
+        # get the output names that are given
+        name = self.output
+
+        # split in order to separate, if it comes from the command line
+        if type(name) == str:
+            name = name.split(',')
+
+        # if output names given are less than files to be plot, append the default (.pdf) until both have the same length
+        while len(name) < arrayLen:
+            name.append('.pdf')
+
+        # if there are more outputs than files, return only the ones that can be used
+        return name[:arrayLen]
+
 
     def defineAxis(self):
         y = self.y
@@ -145,10 +194,27 @@ class Plot:
         self.y = values
 
 
-    def exportFile(self):
+    def importFile(self):
+        
+        fileName = self.parseInput()
+        print(fileName)
 
-        outName=self.output
-        fName=self.fileName
+        # for every file in the list, open it 
+        handlers = []
+        for files in fileName:
+            name, ext = files.split('.')
+
+            if ext:
+                # opens a single file
+                handlers.append( self.openFile(name, ext) )
+            else:
+                # opens a full directory
+                pass
+        
+        return handlers
+
+
+    def exportFile(self, outName, fName):
 
         #defines regex`s that search specific combinations
         containsExt = re.compile('^\.\w+')
@@ -214,4 +280,5 @@ class Plot:
 
 if __name__ == "__main__":
     instance = Plot(cmd=True)
-    instance.exportFile()
+    sns.set()
+    instance.plotGraph()

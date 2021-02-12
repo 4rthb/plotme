@@ -3,6 +3,7 @@ import seaborn as sns
 import pandas as pd
 import argparse
 import re
+import ast
 
 class Plot:
 
@@ -13,7 +14,7 @@ class Plot:
                 output= '.pdf', 
                 x=0, 
                 y='1', 
-                symbols='ball', 
+                symbols='point',
                 distBetSymbols=None, 
                 symbolSize=None, 
                 figSize=None, 
@@ -56,13 +57,13 @@ class Plot:
         self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
         self.parser.add_argument("-x", "--x", help="The abscisse of the graph", default=0)
         self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default='1')
-        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=("ball" ,))
+        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=(".",))
         self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol", default=None)
-        self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol", default=None)
+        self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol", default=(2,))
         self.parser.add_argument("-fig", "--figSize", help="Size of the graph", default=None)
         self.parser.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself", default=None)
         self.parser.add_argument("-lfs", "--legendFontSize", help="Size of the graphs legend", default=None)
-        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line graph", default=None)
+        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line graph", default=(1,))
         self.parser.add_argument("-plot", "--plotTitle", help="Title that appears at the top of the graph", default=None)
         self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa", default=None)
         self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s)", default=None)
@@ -96,27 +97,45 @@ class Plot:
         colors = self.getPalette()
         # get the output names
         outputNames = self.parseOutput(len(files))
+        # get the graph types
+        graphTypes = self.parseGraph(len(files))
+        # get the widths of the line graphs
+        lineWidths = self.parseLines(len(files))
+        # get the symbols and symbol sizes of the scatter graphs
+        markers, mrkrSizes, mrkrDist = self.parseSymbols(len(files))
         # get the axis
         self.defineAxis()
         # get the list of the parameters
         args = self.getParameters()
 
+
         print(args)
         # plot each file individually
         for count, f in enumerate(files):
-
+            line=0
+            symbl=0
+            if mrkrDist:
+                mrkrD = mrkrDist[symbl]
+            else:
+                mrkrD=mrkrDist
             columns = f.columns
             yAxis = [ columns[ind] for ind in self.y ]
 
             # make the correct type of graph
-            if self.graphType == 'line':
-                f.plot(kind='line', x=columns[self.x], y=yAxis, color=colors, **args)
-            elif self.graphType == 'pie':
-                pass
-            elif self.graphType == 'bar':
-                pass
-            elif self.graphType == 'scatter':
-                f.plot(kind='scatter', x=columns[self.x], y=yAxis, c='#a98d19', **args)
+            if graphTypes[count] == 'line':
+                f.plot(kind='line', x=columns[int(self.x)], y=yAxis, color=colors, **args, linewidth=lineWidths[line],
+                       marker=markers[symbl], markersize=mrkrSizes[symbl], markevery=mrkrD)
+                if line < len(lineWidths)-1:
+                    line+=1
+            elif graphTypes[count] == 'pie':
+                f.plot(kind='pie', x=columns[self.x], y=yAxis, color=colors, **args)
+            elif graphTypes[count] == 'bar':
+                f.plot(kind='bar', x=columns[self.x], y=yAxis, color=colors, **args)
+            elif graphTypes[count] == 'scatter':
+                f.plot(kind='scatter', x=columns[self.x], y=yAxis, c='#a98d19', **args, marker=markers[symbl], s=mrkrSizes[symbl])
+                if symbl < len(markers) - 1:
+                    symbl += 1
+
             
             # finally, export the files
             self.exportFile(outputNames[count], inputNames[count])
@@ -132,8 +151,6 @@ class Plot:
                 raise Exception('Invalid dimension for figSize parameter')
             
             args['figsize'] = tuple(args['figsize'])
-        
-
         
         return args
 
@@ -177,6 +194,73 @@ class Plot:
         # if there are more outputs than files, return only the ones that can be used
         return name[:arrayLen]
 
+    def parseGraph(self, arrayLen):
+        # get the graph types that are given
+        typeG = self.graphType
+
+        # split in order to separate, if it comes from the command line
+        if type(typeG) == str:
+            typeG = typeG.split(',')
+
+        # removes blank spaces
+        for graph in typeG:
+            graph = graph.strip()
+
+        # if graph types given are less than files to be plot, append the last type until both have the same length
+        while len(typeG) < arrayLen:
+            typeG.append(typeG[-1])
+
+        # if there are more outputs than files, return only the ones that can be used
+        return typeG[:arrayLen]
+
+    def parseSymbols(self, arrayLen):
+        # get the symbols properties that are given
+        markers = self.symbols
+        mrkrSizes = self.symbolSize
+        mrkrDist = self.distBetSymbols
+
+        # split in order to separate, if it comes from the command line
+        if type(markers) == str:
+            markers = markers.split(',')
+            mrkrSizes = mrkrSizes.split(',')
+
+        # gets the correct values
+        mrkrSizes = [float(nm) for nm in mrkrSizes]
+
+        # evens the lengths of the lists
+        while len(markers) != len(mrkrSizes):
+            if len(markers) > len(mrkrSizes):
+                mrkrSizes.append(mrkrSizes[-1])
+            else:
+                markers.append(markers[-1])
+        # checks if the distance between arguments was passed, so that there are no problems dealing with iteration on
+        # type None
+        if mrkrDist:
+            mrkrDist = list(ast.literal_eval(mrkrDist))
+            while len(markers) != len(mrkrDist):
+                if len(markers) > len(mrkrDist):
+                    mrkrDist.append(mrkrDist[-1])
+                else:
+                    markers.append(markers[-1])
+            # if there are more symbols than files, return only the ones that can be used
+            return markers[:arrayLen], mrkrSizes[:arrayLen], mrkrDist[:arrayLen]
+
+        # if there are more symbols than files, return only the ones that can be used
+        return markers[:arrayLen], mrkrSizes[:arrayLen], mrkrDist
+
+    def parseLines(self, arrayLen):
+        # get the line widths that are given
+        lineW = self.lineWidth
+
+        # split in order to separate, if it comes from the command line
+        if type(lineW) == str:
+            lineW = lineW.split(',')
+
+        # gets the float values
+        lineW = [float(n) for n in lineW]
+
+        # if there are more outputs than files, return only the ones that can be used
+        return lineW[:arrayLen]
 
     def defineAxis(self):
         y = self.y

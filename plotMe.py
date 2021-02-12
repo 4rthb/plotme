@@ -54,7 +54,7 @@ class Plot:
         self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line", choices=['line', 'pie', 'bar', 'scatter'])
         self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
-        self.parser.add_argument("-x", "--x", help="The abscissa of the graph", default=0)
+        self.parser.add_argument("-x", "--x", help="The abscisse of the graph", default=0)
         self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default='1')
         self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=("ball" ,))
         self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol", default=None)
@@ -98,7 +98,10 @@ class Plot:
         outputNames = self.parseOutput(len(files))
         # get the axis
         self.defineAxis()
+        # get the list of the parameters
+        args = self.getParameters()
 
+        print(args)
         # plot each file individually
         for count, f in enumerate(files):
 
@@ -107,16 +110,32 @@ class Plot:
 
             # make the correct type of graph
             if self.graphType == 'line':
-                f.plot(x=columns[self.x], y=yAxis, color=colors)
+                f.plot(kind='line', x=columns[self.x], y=yAxis, color=colors, **args)
             elif self.graphType == 'pie':
                 pass
             elif self.graphType == 'bar':
                 pass
             elif self.graphType == 'scatter':
-                pass
+                f.plot(kind='scatter', x=columns[self.x], y=yAxis, c='#a98d19', **args)
             
             # finally, export the files
             self.exportFile(outputNames[count], inputNames[count])
+
+    def getParameters(self):
+        args = {}
+
+        if self.figSize:
+            args['figsize'] = self.figSize.split(',')
+            args['figsize'] = [ int(num) for num in args['figsize'] ]
+            
+            if len(args['figsize']) > 2:
+                raise Exception('Invalid dimension for figSize parameter')
+            
+            args['figsize'] = tuple(args['figsize'])
+        
+
+        
+        return args
 
 
     def openFile(self, name, ext):

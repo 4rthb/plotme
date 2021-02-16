@@ -12,7 +12,8 @@ class Plot:
                 setPalette='colorblind', 
                 graphType='line',
                 output= '.pdf', 
-                x=0, 
+                separator = ',',
+                x='0', 
                 y='1', 
                 symbols='point',
                 distBetSymbols=None, 
@@ -34,7 +35,8 @@ class Plot:
             self.Palette = setPalette 
             self.graphType = graphType
             self.output = output 
-            self.x = x 
+            self.sep = separator
+            self.x = int(x) 
             self.y = y 
             self.symbols = symbols 
             self.distBetSymbols = distBetSymbols 
@@ -55,6 +57,7 @@ class Plot:
         self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line", choices=['line', 'pie', 'bar', 'scatter'])
         self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
+        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the file parse", default=',')
         self.parser.add_argument("-x", "--x", help="The abscisse of the graph", default=0)
         self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default='1')
         self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=(".",))
@@ -74,7 +77,8 @@ class Plot:
         self.Palette = args.setPalette 
         self.graphType = args.graphType
         self.output = args.output 
-        self.x = args.x 
+        self.sep = args.separator
+        self.x = int(args.x) 
         self.y = args.y 
         self.symbols = args.symbols 
         self.distBetSymbols = args.distBetSymbols 
@@ -104,44 +108,49 @@ class Plot:
         # get the symbols and symbol sizes of the scatter graphs
         markers, mrkrSizes, mrkrDist = self.parseSymbols(len(files))
         # get the axis
-        self.defineAxis()
-        # get the list of the parameters
-        args = self.getParameters()
+        yInput = self.defineAxis()
+        # parses plotTitle, fontsize, legendFontsize, ylabel, xlabel
+        plotTitle = self.parseIn(self.plotTitle)
+        fontSizes = self.parseIn( self.fontSize, ftype=int)
+        legendFontsizes = self.parseIn( self.legendFontSize, ftype=int)
+        yLabels = self.parseIn(self.yLabel)
+        xLabels = self.parseIn(self.xLabel)
 
-
-        print(args)
         # plot each file individually
         for count, f in enumerate(files):
-            line=0
-            symbl=0
-            if mrkrDist:
-                mrkrD = mrkrDist[symbl]
-            else:
-                mrkrD=mrkrDist
+
             columns = f.columns
-            yAxis = [ columns[ind] for ind in self.y ]
+            yAxis = [ columns[ind] for ind in yInput ]
+
+            # get the list of the parameters
+            args = self.getParameters(yAxis, self.x, colors, lineWidths, markers, mrkrSizes, mrkrDist, graphTypes[count], plotTitle, fontSizes, legendFontsizes, yLabels, xLabels)
 
             # make the correct type of graph
             if graphTypes[count] == 'line':
-                f.plot(kind='line', x=columns[int(self.x)], y=yAxis, color=colors, **args, linewidth=lineWidths[line],
-                       marker=markers[symbl], markersize=mrkrSizes[symbl], markevery=mrkrD)
-                if line < len(lineWidths)-1:
-                    line+=1
+                f.plot(kind='line', **args)
             elif graphTypes[count] == 'pie':
-                f.plot(kind='pie', x=columns[self.x], y=yAxis, color=colors, **args)
+                f.plot(kind='pie', **args)
             elif graphTypes[count] == 'bar':
-                f.plot(kind='bar', x=columns[self.x], y=yAxis, color=colors, **args)
+                f.plot(kind='bar', **args)
             elif graphTypes[count] == 'scatter':
-                f.plot(kind='scatter', x=columns[self.x], y=yAxis, c='#a98d19', **args, marker=markers[symbl], s=mrkrSizes[symbl])
-                if symbl < len(markers) - 1:
-                    symbl += 1
-
+                f.plot(kind='scatter', **args)
             
             # finally, export the files
             self.exportFile(outputNames[count], inputNames[count])
 
-    def getParameters(self):
+    def getParameters(self, y, x, color, lineWidths, markers, mrkrSizes, mrkrDist, graphType, plotTitle, fontSizes, legendFontsizes, yLabels, xLabels):
         args = {}
+
+        args['y'] = y
+        if graphType != 'pie':
+            args['x'] = x
+
+        if graphType != 'scatter':
+            args['color'] = color
+        else:
+            col = tuple([ int( 255*n ) for n in color[0] ]) 
+            args['c'] = '#%02x%02x%02x' % col
+            print(args['c'])
 
         if self.figSize:
             args['figsize'] = self.figSize.split(',')
@@ -152,15 +161,47 @@ class Plot:
             
             args['figsize'] = tuple(args['figsize'])
         
+        if graphType == 'line':
+            if lineWidths:
+                args['linewidth'] = lineWidths.pop(0)
+            if mrkrSizes:
+                args['markersize'] = mrkrSizes.pop(0)
+            if mrkrDist:
+                args['markevery'] = mrkrDist.pop(0)
+
+        if graphType == 'line' or graphType == 'scatter':
+            if markers:
+                args['marker'] = markers.pop(0)
+        
+        if graphType == 'scatter':
+            if mrkrSizes:
+                args['s'] = mrkrSizes.pop(0)
+
+        if plotTitle:
+            args['title'] = plotTitle.pop(0)
+        
+        if fontSizes:
+            args['fontsize'] = fontSizes.pop(0)
+
+        #-------------------------------------
+        if legendFontsizes:
+            #args['']
+            pass
+        #-------------------------------------
+
+        if yLabels:
+            args['ylabel'] = yLabels.pop(0)
+        if xLabels:
+            args['xlabel'] = xLabels.pop(0)
+
+
         return args
 
 
-    def openFile(self, name, ext):
-        if ext == 'csv':
-            df = pd.read_csv(f'{name}.{ext}')
-            return df
-        else:
-            raise Exception('File type not supported')
+    def openFile(self, name):
+        df = pd.read_csv(name, sep=self.sep)
+        return df
+
 
     def getPalette(self):
         '''
@@ -194,6 +235,20 @@ class Plot:
         # if there are more outputs than files, return only the ones that can be used
         return name[:arrayLen]
 
+
+    def parseIn(self, arg, ftype=str):
+        if not arg:
+            return []
+
+        if type(arg) == str:
+            arg = arg.split(',')
+        
+        if ftype == int:
+            arg = [ int(x) for x in arg ]
+
+        return arg
+
+    
     def parseGraph(self, arrayLen):
         # get the graph types that are given
         typeG = self.graphType
@@ -215,7 +270,7 @@ class Plot:
 
     def parseSymbols(self, arrayLen):
         # get the symbols properties that are given
-        markers = self.symbols
+        markers = list(self.symbols)
         mrkrSizes = self.symbolSize
         mrkrDist = self.distBetSymbols
 
@@ -294,26 +349,19 @@ class Plot:
         # sort the values to get them in order
         values.sort()
 
-        self.y = values
+        return values
 
 
     def importFile(self):
         
         fileName = self.parseInput()
-        print(fileName)
 
         # for every file in the list, open it 
         handlers = []
         for files in fileName:
-            name, ext = files.split('.')
 
-            if ext:
-                # opens a single file
-                handlers.append( self.openFile(name, ext) )
-            else:
-                # opens a full directory
-                pass
-        
+            handlers.append( self.openFile(files) )
+
         return handlers
 
 

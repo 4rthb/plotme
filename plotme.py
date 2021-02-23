@@ -116,6 +116,7 @@ class Plot:
         yLabels = self.parseIn(self.yLabel)
         xLabels = self.parseIn(self.xLabel)
 
+
         # plot each file individually
         for count, f in enumerate(files):
 
@@ -202,7 +203,7 @@ class Plot:
 
 
     def openFile(self, name):
-        df = pd.read_csv(name, sep=self.sep, comment='#')
+        df = pd.read_csv(name, sep=self.sep, comment='#', engine='python')
         return df
 
 

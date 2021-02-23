@@ -202,7 +202,7 @@ class Plot:
 
 
     def openFile(self, name):
-        df = pd.read_csv(name, sep=self.sep)
+        df = pd.read_csv(name, sep=self.sep, comment='#')
         return df
 
 

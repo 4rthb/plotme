@@ -31,4 +31,6 @@
  - Plotting a pie graph with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep \t -pl label,label2,...,labelN`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
 
-### Dependencies: seaborn
+### Use python3, as well as pip3 to install the dependencies
+
+### Dependencies: seaborn, matplotlib, pandas, argparse, re, ast

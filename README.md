@@ -8,7 +8,7 @@
 | _--graphType_      | _-g_     | line          | Type of graph that will be plotted                    | line, scatter, pie and bar                             |
 | _--fileName_       | _-f_     | `required`    | Name of the file that will provide data for the graph | `name with or without path`.`extension`                |
 | _--output_         | _-o_     | .pdf          | Name and/or extension of the desired output file      | `string` e.g. "outputFile.pdf", ".png" or "outputName" |
-| _--separator_      | _-sep_   | ,             | Separator used in the input file                      | `string`                                               |
+| _--separator_      | _-sep_   | ,             | Separator used in the input file                      | `string` use ' ' for names that contains \ or similar  | 
 | _--x_              | _-x_     | first column  | The abscissa of the graph                             | `int`                                                  |
 | _--y_              | _-y_     | second column | The ordinate(s) of the graph                          | `int`                                                  |
 | _--symbols_        | _-s_     | ball symbol   | Shape of the symbols used                             | https://matplotlib.org/3.1.0/api/markers_api.html      |
@@ -28,7 +28,7 @@
  - Plotting three scatter graphs with differente output names and plot titles: `py plotme.py -f (path)file.ext,(path)file2.ext,(path)file3.ext -plot title,title2,title3 -o export,export2.jpeg,export3.png` 
  - Plotting a bar graph: `py plotme.py -f (path)filename.extension`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
- - Plotting a pie graph with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep \t -pl label,label2,...,labelN`
+ - Plotting a pie graph with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep '\t' -pl label,label2,...,labelN`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
 
 ### Use python3, as well as pip3 to install the dependencies

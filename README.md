@@ -1,5 +1,5 @@
-# plotScript
- A script written in python that plots data from a file, can also output that graph as an image or pdf. 
+# plotme
+ A script written in python that plots data from a file or from a dataframe, outputs that graph as an image or pdf. 
 
 ## Command Line Arguments
 | Verbose            | Short    | Default       | Description                                           | Valid Values                                           |
@@ -23,13 +23,18 @@
 | _--pieLabel_       | _-pl_    | none          | Label each slice of the pie                           | `string1,string2,...,stringN`                          |
 
 ## Examples
- - Plotting two line graphs: `py plotme.py -f (path)filename.extension,(path)filename2.extension -x columnIndex -y columnIndex`
+ - Plotting line graph: `py plotme.py -f (path)filename.extension -x columnIndex -y columnIndex`
     - The only required argument is the filename 
- - Plotting three scatter graphs with differente output names and plot titles: `py plotme.py -f (path)file.ext,(path)file2.ext,(path)file3.ext -plot title,title2,title3 -o export,export2.jpeg,export3.png` 
+ - Plotting scatter graph with differente output name and plot title: `py plotme.py -f (path)file.ext -plot title -o export` 
  - Plotting a bar graph: `py plotme.py -f (path)filename.extension`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
  - Plotting a pie graph with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep '\t' -pl label,label2,...,labelN`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
+
+## Using it as an imported module
+
+ 1. After importing, you need to make an instance of the `Plot` class while passing, at least, the  `data`(the imported version of fileName) argument with the dataframe, the rest of the arguments have the same names as their CLI counterparts. 
+ 2. Call the `plotGraph()` method. The file will be exported as `Plot.pdf` if no `output` argument was passed.
 
 ### Use python3, as well as pip3 to install the dependencies
 

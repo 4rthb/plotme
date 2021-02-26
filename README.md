@@ -1,5 +1,5 @@
 # plotme
- A module written in Python that plots data from a file or multiple files, can also output the graphs as an image or pdf. 
+ A module written in Python that plots data from a file or multiple files, outputs the graphs as an image or pdf. 
 
 ## Command Line Arguments
 | Verbose            | Short    | Default       | Description                                           | Valid Values                                           |

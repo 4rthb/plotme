@@ -106,8 +106,6 @@ class Plot:
         color = self.getPalette()
         # get the symbols and symbol sizes of the scatter graphs
         yInput = self.defineAxis()
-
-        # plot each file individually
     
         columns = data.columns
         if self.graphType != 'pie':
@@ -142,8 +140,8 @@ class Plot:
         if self.graphType != 'pie':
             args['x'] = self.x
 
-        if self.graphType == 'pie' and pieLabels:
-            args['labels'] = self.pieLabels
+        if self.graphType == 'pie' and self.pieLabel:
+            args['labels'] = self.pieLabel
 
         if self.graphType != 'scatter' and self.graphType != 'pie':
             args['color'] = color
@@ -162,10 +160,16 @@ class Plot:
         
         if self.graphType == 'line':
             if self.lineWidth:
+                self.lineWidth = [str(width) for width in self.lineWidth]
+                self.lineWidth = "".join(self.lineWidth)
                 args['linewidth'] = self.lineWidth
             if self.symbolSize:
-                args['markersize'] = self.symbolSize
+                if self.symbolSize != float and self.symbolSize != float:
+                    self.symbolSize = [str(floatpoint) for floatpoint in self.symbolSize]
+                    self.symbolSize = "".join(self.symbolSize)
+                args['markersize'] = float(self.symbolSize)
             if self.distBetSymbols and type(self.distBetSymbols) != int and type(self.distBetSymbols) != float:
+                args['markevery'] = ast.literal_eval(self.distBetSymbols)
                 args['markevery'] = self.distBetSymbols
 
         if self.graphType == 'line' or self.graphType == 'scatter':

@@ -126,7 +126,21 @@ class Plot:
         elif self.graphType == 'bar':
             data.plot(kind='bar', **args)
         elif self.graphType == 'scatter':
-            data.plot(kind='scatter', **args)
+            yAx = args['y']
+            args.pop('y')
+            symb = 0
+            if 'marker' in args and len(args['marker']) != 1:
+                symb = args['marker']
+                args['marker'] = symb[0]
+            ax1 = data.plot(kind='scatter', y=yAx[0], **args)
+            yAx.pop(0)
+            while yAx:
+                if symb:
+                    if len(symb)>1:
+                        symb.pop(0)
+                    args['marker'] = symb[0]
+                data.plot(kind='scatter', ax=ax1, y=yAx[0], **args)
+                yAx.pop(0)
             
         # finally, export the file
         self.exportFile(self.output, self.fileName)
@@ -170,15 +184,16 @@ class Plot:
                 args['markersize'] = float(self.symbolSize)
             if self.distBetSymbols and type(self.distBetSymbols) != int and type(self.distBetSymbols) != float:
                 args['markevery'] = ast.literal_eval(self.distBetSymbols)
-                args['markevery'] = self.distBetSymbols
 
         if self.graphType == 'line' or self.graphType == 'scatter':
             if self.symbols:
                 args['marker'] = self.symbols
+            if self.graphType == 'scatter':
+                args['marker'] = re.findall(r"\w{1}|[^\w\s]", args['marker'])
         
         if self.graphType == 'scatter':
             if self.symbolSize:
-                args['s'] = self.symbolSize
+                args['s'] = float(self.symbolSize)
 
         if self.plotTitle:
             args['title'] = self.plotTitle

@@ -25,6 +25,7 @@ class Plot:
                 yLabel=None,
                 pieLabel=None,
                 label=True,
+                bgColor = 'lightgrey',
                 cmd=False ):
 
         if cmd:
@@ -51,6 +52,7 @@ class Plot:
             self.yLabel=yLabel
             self.pieLabel=pieLabel
             self.label = label
+            self.bgColor = bgColor
 
     def parseCmd(self):
         #parses arguments
@@ -72,7 +74,8 @@ class Plot:
         self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa", default=None)
         self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s)", default=None)
         self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot", default=None)
-        self.parser.add_argument("-lab", "--label", help="Label to be put as a description in the plot", default=True, choices=['True', 'False'])
+        self.parser.add_argument("-lab", "--label", help="take the header off", default=True, choices=['True', 'False'])
+        self.parser.add_argument("-bgc", "--bgColor", help="Color of the background", default="lightgrey")
 
         # and put the values in the class variables
         args = self.parser.parse_args()
@@ -99,6 +102,7 @@ class Plot:
             self.label = True
 
         self.data = self.openFile( self.fileName )
+        self.bgColor = args.bgColor
 
     def plotGraph(self):
         data = self.data
@@ -118,13 +122,14 @@ class Plot:
         # get the list of the parameters
         args = self.getParameters(yAxis, color, columns[self.x])
 
+        fig, ax1 = plt.subplots(facecolor=self.bgColor)
         # make the correct type of graph
         if self.graphType == 'line':
-            data.plot(kind='line', **args)
+            data.plot(kind='line', ax=ax1, **args)
         elif self.graphType == 'pie':
-            data.plot(kind='pie', **args)
+            data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':
-            data.plot(kind='bar', **args)
+            data.plot(kind='bar', ax=ax1, **args)
         elif self.graphType == 'scatter':
             yAx = args['y']
             args.pop('y')
@@ -132,7 +137,7 @@ class Plot:
             if 'marker' in args and len(args['marker']) != 1:
                 symb = args['marker']
                 args['marker'] = symb[0]
-            ax1 = data.plot(kind='scatter', y=yAx[0], **args)
+            data.plot(kind='scatter', ax=ax1, y=yAx[0], **args)
             yAx.pop(0)
             while yAx:
                 if symb:
@@ -141,9 +146,11 @@ class Plot:
                     args['marker'] = symb[0]
                 data.plot(kind='scatter', ax=ax1, y=yAx[0], **args)
                 yAx.pop(0)
-            
+
         # finally, export the file
-        self.exportFile(self.output, self.fileName)
+        ax1.set_facecolor(self.bgColor)
+        ax1.set_clip_on(False)
+        self.exportFile(self.output, self.fileName, fig)
 
     def getParameters(self, y, color, x):
         # dictionary of arguments
@@ -188,7 +195,7 @@ class Plot:
         if self.graphType == 'line' or self.graphType == 'scatter':
             if self.symbols:
                 args['marker'] = self.symbols
-            if self.graphType == 'scatter':
+            if self.graphType == 'scatter' and self.symbols:
                 args['marker'] = re.findall(r"\w{1}|[^\w\s]", args['marker'])
         
         if self.graphType == 'scatter':
@@ -264,7 +271,7 @@ class Plot:
 
         return values
 
-    def exportFile(self, outName, fName):
+    def exportFile(self, outName, fName, fig):
 
         #defines regex`s that search specific combinations
         containsExt = re.compile('^\.\w+')
@@ -309,7 +316,7 @@ class Plot:
 
             #search if given extension is supported
             if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)$", ext):
-                plt.savefig(newName + add + ext, bbox_inches="tight")
+                fig.savefig(newName + add + ext, bbox_inches="tight", facecolor=fig.get_facecolor(), transparent=True)
             else:
                 print("Extension not supported")
 
@@ -324,7 +331,7 @@ class Plot:
                     rmvName = rmvName[:-1]
                 if rmvName != '':
                     fName=rmvName
-            plt.savefig(fName+'Plot'+outName, bbox_inches="tight")
+            fig.savefig(fName+'Plot'+outName, bbox_inches="tight", facecolor=fig.get_facecolor(), transparent=True)
 
             print(f'File {fName}Plot{outName} saved succesfully')
 

@@ -12,8 +12,8 @@ class Plot:
                 graphType='line',
                 output= '.pdf', 
                 separator = ',',
-                x='0', 
-                y='1',
+                x='1',
+                y='2',
                 symbols='.',
                 distBetSymbols=None, 
                 symbolSize=(2,),
@@ -38,7 +38,7 @@ class Plot:
             self.graphType = graphType
             self.output = output 
             self.sep = separator
-            self.x = int(x) 
+            self.x = int(x) - 1
             self.y = y 
             self.symbols = symbols 
             self.distBetSymbols = distBetSymbols 
@@ -60,8 +60,8 @@ class Plot:
         self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line")
         self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
         self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the file parse", default=',')
-        self.parser.add_argument("-x", "--x", help="The abscisse of the graph", default=0)
-        self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default='1')
+        self.parser.add_argument("-x", "--x", help="The abscisse of the graph", default=1)
+        self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default='2')
         self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=None)
         self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol", default=None)
         self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol", default=None)
@@ -81,7 +81,7 @@ class Plot:
         self.graphType = args.graphType
         self.output = args.output 
         self.sep = args.separator
-        self.x = int(args.x) 
+        self.x = int(args.x) - 1
         self.y = args.y 
         self.symbols = args.symbols 
         self.distBetSymbols = args.distBetSymbols 
@@ -116,7 +116,7 @@ class Plot:
             yAxis = int(yAxis)
 
         # get the list of the parameters
-        args = self.getParameters(yAxis, color)
+        args = self.getParameters(yAxis, color, columns[self.x])
 
         # make the correct type of graph
         if self.graphType == 'line':
@@ -145,7 +145,7 @@ class Plot:
         # finally, export the file
         self.exportFile(self.output, self.fileName)
 
-    def getParameters(self, y, color):
+    def getParameters(self, y, color, x):
         # dictionary of arguments
         # some types of graphs don`t accept some arguments, so they need to be checked beforehand and evaluated
         args = {}
@@ -215,6 +215,9 @@ class Plot:
 
             args['header'] = None
 
+        if self.sep == ' ' or self.sep == '':
+            self.sep = '\ '
+
         df = pd.read_csv(name, sep=self.sep, comment='#', engine='python', **args)
         
         return df
@@ -237,7 +240,7 @@ class Plot:
         for interval in y:
             # for every value in the list, check if it is an interval or a single value
             val = interval.split('-')
-            
+
             # if it's a list, then it's an interval
             if len(val) > 1:
                 # gets the limits
@@ -245,13 +248,15 @@ class Plot:
                 low_limit = min(val)
                 high_limit = max(val)
                 # adds each value
-                for k in range(low_limit, high_limit):
-                    values.add(k)
+                for k in range(low_limit, high_limit+1):
+                    # we put k-1 in order to get the correct index
+                    # because the user considers our 0 as 1.
+                    values.add(k-1)
                 continue
 
             #otherwise, it's a single value and just add it to the set
-            values.add(int(val[0]))
-        
+            values.add(int(val[0])-1)
+
         # transform to a list
         values = list(values)
         # sort the values to get them in order

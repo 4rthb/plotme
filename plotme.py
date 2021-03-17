@@ -27,6 +27,8 @@ class Plot:
                 pieLabel=None,
                 label=True,
                 bgColor = 'lightgrey',
+                gColor = "grey",
+                spineTran = True,
                 ci=False,
                 cmd=False ):
 
@@ -55,6 +57,8 @@ class Plot:
             self.pieLabel=pieLabel
             self.label = label
             self.bgColor = bgColor
+            self.gColor = gColor
+            self.spineTran = spineTran
             self.ci = ci
 
     def parseCmd(self):
@@ -79,6 +83,8 @@ class Plot:
         self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot", default=None)
         self.parser.add_argument("-lab", "--label", help="Ignores", default=True, choices=['True', 'False'])
         self.parser.add_argument("-bgc", "--bgColor", help="Change the color of the background", default="lightgrey")
+        self.parser.add_argument("-gc", "--gColor", help="Change the color of the graph`s grid", default="grey")
+        self.parser.add_argument("-st", "--spineTran", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
         self.parser.add_argument("-ci", "--confidenceInterval", help="Makes a confidence interval over the whole database, the effect is to put a shadow representing the error", choices=['True', 'False'], default=False)
 
         # and put the values in the class variables
@@ -107,6 +113,12 @@ class Plot:
 
         self.data = self.openFile( self.fileName )
         self.bgColor = args.bgColor
+        self.gColor = args.gColor
+
+        if args.spineTran == 'True':
+            self.spineTran = True
+        else:
+            self.spineTran = False
         
         if args.confidenceInterval == 'True':
             self.ci = True
@@ -176,6 +188,18 @@ class Plot:
         # finally, export the file
         ax1.set_facecolor(self.bgColor)
         ax1.set_clip_on(False)
+        ax1.tick_params(grid_color=self.gColor)
+        if self.spineTran:
+            ax1.spines['bottom'].set_visible(False)
+            ax1.spines['top'].set_visible(False)
+            ax1.spines['right'].set_visible(False)
+            ax1.spines['left'].set_visible(False)
+        else:
+            ax1.spines['bottom'].set_color(self.gColor)
+            ax1.spines['top'].set_color(self.gColor)
+            ax1.spines['right'].set_color(self.gColor)
+            ax1.spines['left'].set_color(self.gColor)
+        plt.show()
         self.exportFile(self.output, self.fileName, fig)
 
     def getParameters(self, y, color, x):

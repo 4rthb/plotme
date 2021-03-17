@@ -4,6 +4,7 @@ import pandas as pd
 import argparse
 import re
 import ast
+import numpy as np
 
 class Plot:
     def __init__(self, 
@@ -26,6 +27,7 @@ class Plot:
                 pieLabel=None,
                 label=True,
                 bgColor = 'lightgrey',
+                ci=False,
                 cmd=False ):
 
         if cmd:
@@ -53,17 +55,18 @@ class Plot:
             self.pieLabel=pieLabel
             self.label = label
             self.bgColor = bgColor
+            self.ci = ci
 
     def parseCmd(self):
         #parses arguments
         self.parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
-        self.parser.add_argument("-f","--fileName", help="Name of the file that will provide data for the graph: name.extension", required=True)
+        self.parser.add_argument("-f","--fileName", help="Name of the file that contains the data for the graph: name.extension", required=True)
         self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line")
-        self.parser.add_argument("-o","--output", help="Name and/or extension of the desired output file", default=".pdf")
-        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the file parse", default=',')
-        self.parser.add_argument("-x", "--x", help="The abscisse of the graph", default=1)
-        self.parser.add_argument("-y", "--y", help="The ordinate(s) of the graph", default='2')
+        self.parser.add_argument("-o","--output", help="Name and/or extension of the output file", default=".pdf")
+        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purpose", default=',')
+        self.parser.add_argument("-x", "--x", help="The x axis of the plot", default=1)
+        self.parser.add_argument("-y", "--y", help="The y axes (can be one value, a sequence or a list) of the plot", default='2')
         self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=None)
         self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol", default=None)
         self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol", default=None)
@@ -74,8 +77,9 @@ class Plot:
         self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa", default=None)
         self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s)", default=None)
         self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot", default=None)
-        self.parser.add_argument("-lab", "--label", help="take the header off", default=True, choices=['True', 'False'])
-        self.parser.add_argument("-bgc", "--bgColor", help="Color of the background", default="lightgrey")
+        self.parser.add_argument("-lab", "--label", help="Ignores", default=True, choices=['True', 'False'])
+        self.parser.add_argument("-bgc", "--bgColor", help="Change the color of the background", default="lightgrey")
+        self.parser.add_argument("-ci", "--confidenceInterval", help="Makes a confidence interval over the whole database, the effect is to put a shadow representing the error", choices=['True', 'False'], default=False)
 
         # and put the values in the class variables
         args = self.parser.parse_args()
@@ -103,6 +107,11 @@ class Plot:
 
         self.data = self.openFile( self.fileName )
         self.bgColor = args.bgColor
+        
+        if args.confidenceInterval == 'True':
+            self.ci = True
+        else:
+            self.ci = False
 
     def plotGraph(self):
         data = self.data
@@ -125,7 +134,22 @@ class Plot:
         fig, ax1 = plt.subplots(facecolor=self.bgColor)
         # make the correct type of graph
         if self.graphType == 'line':
-            data.plot(kind='line', ax=ax1, **args)
+            if not self.ci: 
+                data.plot(kind='line', ax=ax1, **args)
+            
+            # if the confidence interval is requested
+            else:
+                # calculate the mean and standard deviation
+                std = data[yAxis].std(axis=1)
+                mean = data[yAxis].mean(axis=1)
+
+                xaxis = columns[self.x]
+                x= data.groupby(xaxis)[xaxis].mean().keys().values
+                args['y'] = yAxis
+                #data.plot(kind='line', ax=ax1, **args)
+                plt.plot( data[columns[self.x]].to_numpy(), mean.to_numpy() )
+                plt.fill_between(x, mean+std, mean-std, alpha=0.25, color=color, rasterized=True)
+
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':
@@ -134,17 +158,19 @@ class Plot:
             yAx = args['y']
             args.pop('y')
             symb = 0
+            i=0
             if 'marker' in args and len(args['marker']) != 1:
                 symb = args['marker']
                 args['marker'] = symb[0]
-            data.plot(kind='scatter', ax=ax1, y=yAx[0], **args)
+            data.plot(kind='scatter', ax=ax1, y=yAx[0], **args, c=color[i])
             yAx.pop(0)
             while yAx:
+                i+=1
                 if symb:
                     if len(symb)>1:
                         symb.pop(0)
                     args['marker'] = symb[0]
-                data.plot(kind='scatter', ax=ax1, y=yAx[0], **args)
+                data.plot(kind='scatter', ax=ax1, y=yAx[0], **args, c=color[i])
                 yAx.pop(0)
 
         # finally, export the file
@@ -166,9 +192,6 @@ class Plot:
 
         if self.graphType != 'scatter' and self.graphType != 'pie':
             args['color'] = color
-        elif self.graphType == 'scatter':
-            col = tuple([ int( 255*n ) for n in color[0] ]) 
-            args['c'] = '#%02x%02x%02x' % col
 
         if self.figSize:
             args['figsize'] = self.figSize.split(',')
@@ -233,7 +256,7 @@ class Plot:
         '''
         deep, muted, pastel, bright, dark, and colorblind
         '''
-        return sns.color_palette(self.Palette)
+        return sns.color_palette(self.Palette, as_cmap=True)
 
     def defineAxis(self):
         y = self.y

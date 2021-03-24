@@ -64,27 +64,27 @@ class Plot:
 
     def parseCmd(self):
         #parses arguments
-        self.parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
+        self.parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
         self.parser.add_argument("-f","--fileName", help="Name of the file that contains the data for the graph: name.extension", required=True)
         self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
-        self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line")
-        self.parser.add_argument("-o","--output", help="Name and/or extension of the output file", default=".pdf")
-        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purpose", default=',')
-        self.parser.add_argument("-x", "--x", help="The x axis of the plot", default=1)
-        self.parser.add_argument("-y", "--y", help="The y axes (can be one value, a sequence or a list) of the plot", default='2')
-        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used", default=None)
-        self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol", default=None)
-        self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol", default=None)
-        self.parser.add_argument("-fig", "--figSize", help="Size of the graph", default=None)
-        self.parser.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself", default=None)
-        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line graph", default=None)
-        self.parser.add_argument("-plot", "--plotTitle", help="Title that appears at the top of the graph", default=None)
-        self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa", default=None)
-        self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s)", default=None)
-        self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot", default=None)
-        self.parser.add_argument("-lab", "--label", help="Ignores", default=True, choices=['True', 'False'])
-        self.parser.add_argument("-bgc", "--bgColor", help="Change the color of the background", default="lightgrey")
-        self.parser.add_argument("-gc", "--gColor", help="Change the color of the graph`s grid", default="grey")
+        self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
+        self.parser.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'", default=".pdf")
+        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purpose.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters", default=',')
+        self.parser.add_argument("-x", "--x", help="The x axis of the plot.\nValid arguments: Indexes of columns", default=1)
+        self.parser.add_argument("-y", "--y", help="The y axes of the plot.\nValid arguments: Indexes of columns(value, list or sequences)", default='2')
+        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Sequences matching the number of y indexes, with no separators\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nEx: sh+v3", default=None)
+        self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: None, int, float, (int,int), [float,float], [int,int,int],(float,float,float)", default=None)
+        self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol.\nValid arguments: float", default=None)
+        self.parser.add_argument("-fig", "--figSize", help="Size of the graph.\nValid arguments: (float,float) in inches", default=None)
+        self.parser.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int", default=None)
+        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line graph.\nValid arguments: float", default=None)
+        self.parser.add_argument("-plot", "--plotTitle", help="Title that appears at the top of the graph.\nValid arguments: string", default=None)
+        self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string", default=None)
+        self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string", default=None)
+        self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes", default=None)
+        self.parser.add_argument("-lab", "--label", help="Ignores the # lines in the file", default=True, choices=['True', 'False'])
+        self.parser.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
+        self.parser.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
         self.parser.add_argument("-st", "--spineTran", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
         self.parser.add_argument("-ci", "--confidenceInterval", help="Makes a confidence interval over the whole database, the effect is to put a shadow representing the error", choices=['True', 'False'], default=False)
 
@@ -134,7 +134,6 @@ class Plot:
         yInput = self.defineAxis()
     
         columns = data.columns
-        print(data.shape[0])
         if self.graphType != 'pie':
             yAxis = [ columns[ind] for ind in yInput ]
         else:

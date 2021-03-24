@@ -4,6 +4,7 @@ import pandas as pd
 import argparse
 import re
 import ast
+from matplotlib.colors import ListedColormap, TwoSlopeNorm
 import numpy as np
 
 class Plot:
@@ -128,11 +129,12 @@ class Plot:
     def plotGraph(self):
         data = self.data
         # get the color palette
-        color = self.getPalette()
+        cmap = self.getPalette()
         # get the symbols and symbol sizes of the scatter graphs
         yInput = self.defineAxis()
     
         columns = data.columns
+        print(data.shape[0])
         if self.graphType != 'pie':
             yAxis = [ columns[ind] for ind in yInput ]
         else:
@@ -141,9 +143,9 @@ class Plot:
             yAxis = int(yAxis)
 
         # get the list of the parameters
-        args = self.getParameters(yAxis, color, columns[self.x])
+        args = self.getParameters(yAxis, cmap, columns[self.x])
 
-        fig, ax1 = plt.subplots(facecolor=self.bgColor)
+        fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
         # make the correct type of graph
         if self.graphType == 'line':
             if not self.ci: 
@@ -160,10 +162,11 @@ class Plot:
                 args['y'] = yAxis
                 #data.plot(kind='line', ax=ax1, **args)
                 plt.plot( data[columns[self.x]].to_numpy(), mean.to_numpy() )
-                plt.fill_between(x, mean+std, mean-std, alpha=0.25, color=color, rasterized=True)
+                plt.fill_between(x, mean+std, mean-std, alpha=0.25, cmap=cmap, rasterized=True)
 
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
+            plt.tight_layout()
         elif self.graphType == 'bar':
             data.plot(kind='bar', ax=ax1, **args)
         elif self.graphType == 'scatter':
@@ -171,18 +174,25 @@ class Plot:
             args.pop('y')
             symb = 0
             i=0
+            norm = TwoSlopeNorm(vmin=-1,vmax=1,vcenter=0)
             if 'marker' in args and len(args['marker']) != 1:
                 symb = args['marker']
                 args['marker'] = symb[0]
-            data.plot(kind='scatter', ax=ax1, y=yAx[0], **args, c=color[i])
+            color=-0.9
+            data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.tile(color,data[data.columns[i]].count()), norm=norm, **args)
+            fig.delaxes(fig.axes[-1])
             yAx.pop(0)
             while yAx:
+                color+=0.2
+                if color>1:
+                    color-=2
                 i+=1
                 if symb:
                     if len(symb)>1:
                         symb.pop(0)
                     args['marker'] = symb[0]
-                data.plot(kind='scatter', ax=ax1, y=yAx[0], **args, c=color[i])
+                data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.tile(color,data[data.columns[i]].count()), norm=norm, **args)
+                fig.delaxes(fig.axes[-1])
                 yAx.pop(0)
 
         # finally, export the file
@@ -199,10 +209,11 @@ class Plot:
             ax1.spines['top'].set_color(self.gColor)
             ax1.spines['right'].set_color(self.gColor)
             ax1.spines['left'].set_color(self.gColor)
+        ax1.autoscale('tight')
         plt.show()
         self.exportFile(self.output, self.fileName, fig)
 
-    def getParameters(self, y, color, x):
+    def getParameters(self, y, cmap, x):
         # dictionary of arguments
         # some types of graphs don`t accept some arguments, so they need to be checked beforehand and evaluated
         args = {}
@@ -214,8 +225,7 @@ class Plot:
         if self.graphType == 'pie' and self.pieLabel:
             args['labels'] = self.pieLabel
 
-        if self.graphType != 'scatter' and self.graphType != 'pie':
-            args['color'] = color
+        args['colormap'] = cmap
 
         if self.figSize:
             args['figsize'] = self.figSize.split(',')
@@ -280,7 +290,7 @@ class Plot:
         '''
         deep, muted, pastel, bright, dark, and colorblind
         '''
-        return sns.color_palette(self.Palette, as_cmap=True)
+        return ListedColormap(sns.color_palette(self.Palette))
 
     def defineAxis(self):
         y = self.y

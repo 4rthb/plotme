@@ -4,8 +4,12 @@ import pandas as pd
 import argparse
 import re
 import ast
-from matplotlib.colors import ListedColormap, TwoSlopeNorm
 import numpy as np
+from matplotlib.colors import ListedColormap
+try:
+    from matplotlib.colors import TwoSlopeNorm as nrm
+except:
+    from matplotlib.colors import DivergingNorm as nrm
 
 class Plot:
     def __init__(self, 
@@ -159,13 +163,11 @@ class Plot:
                 xaxis = columns[self.x]
                 x= data.groupby(xaxis)[xaxis].mean().keys().values
                 args['y'] = yAxis
-                #data.plot(kind='line', ax=ax1, **args)
                 plt.plot( data[columns[self.x]].to_numpy(), mean.to_numpy() )
                 plt.fill_between(x, mean+std, mean-std, alpha=0.25, cmap=cmap, rasterized=True)
 
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
-            plt.tight_layout()
         elif self.graphType == 'bar':
             data.plot(kind='bar', ax=ax1, **args)
         elif self.graphType == 'scatter':
@@ -173,7 +175,7 @@ class Plot:
             args.pop('y')
             symb = 0
             i=0
-            norm = TwoSlopeNorm(vmin=-1,vmax=1,vcenter=0)
+            norm = nrm(vmin=-1,vmax=1,vcenter=0)
             if 'marker' in args and len(args['marker']) != 1:
                 symb = args['marker']
                 args['marker'] = symb[0]
@@ -208,7 +210,6 @@ class Plot:
             ax1.spines['top'].set_color(self.gColor)
             ax1.spines['right'].set_color(self.gColor)
             ax1.spines['left'].set_color(self.gColor)
-        ax1.autoscale('tight')
         plt.show()
         self.exportFile(self.output, self.fileName, fig)
 

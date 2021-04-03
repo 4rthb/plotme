@@ -21,20 +21,44 @@
 | _--xLabel_             | _-xl_    | column name   | Label of the abscissa                                 | `string`                                                                 |
 | _--yLabel_             | _-yl_    | column name   | Label of the ordinate(s)                              | `string`                                                                 |
 | _--pieLabel_           | _-pl_    | none          | Label each slice of the pie                           | `string1,string2,...,stringN`                                            |
-| _-label-_              | _-lab_   | true          | ?                                                     | ?                                                                        | 
+| _-label-_              | _-lab_   | true          |  Ignores the # lines in the file                      | `True` or `False`                                                        | 
 | _-bgColor-_            | _-bgc_   | lightgrey     | Color of the background                               | red, brown, lightgrey, grey, black, crimson etc                          |
 | _-gColor-_             | _-gc_    | grey          | Color of the grid                                     | red, brown, lightgrey, grey, black, crimson etc                          |
 | _-spineTran-_          | _-st_    | true          | Transparency of the graph's spine                     | `True` or `False`                                                        |
 | _-confidenceInterval-_ | _-ci_    | false         | shadow that represents the error interval             | `True` or `False`                                                        |
 
 ## Examples
- - Plotting line graph: `py plotme.py -f (path)filename.extension -x columnIndex -y columnIndex`
+ - Line plot: `py plotme.py -f (path)filename.extension -x columnIndex -y columnIndex`
     - The only required argument is the filename 
- - Plotting scatter graph with differente output name and plot title: `py plotme.py -f (path)file.ext -plot title -o export` 
- - Plotting a bar graph: `py plotme.py -f (path)filename.extension`
+ - Scatter plot with differente output name and plot title: `py plotme.py -f (path)file.ext -g scatter -plot title -o export` 
+ - Bar plot: `py plotme.py -f (path)filename.extension`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
- - Plotting a pie graph with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep '\t' -pl label,label2,...,labelN`
+ - Pie chart with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep '\t' -pl label,label2,...,labelN`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
+    - Each label corresponds to a single slice in the chart, from 1 to N, every label is assigned a slice following the file order. The number of labels need to be the same as the number of elements in the column.
+### Using the module:
+ 1. Let's read this pokemon.csv file:  
+
+|#|Name|Type 1|Type 2|HP|Attack|Defense|Sp. Atk|Sp. Def|Speed|Generation|Legendary|  
+|--|:---|:------|:------|:--|:------|:-------|:-------|:-------|:-----|:----------|:---------|  
+| 1 |Bulbasaur|Grass|Poison|45|49|49|65|65|45|1|FALSE|  
+|2|Ivysaur|Grass|Poison|60|62|63|80|80|60|1|FALSE|  
+|3|Venusaur|Grass|Poison|80|82|83|100|100|80|1|FALSE|  
+|3|VenusaurMega Venusaur|Grass|Poison|80|100|123|122|120|80|1|FALSE|  
+|4|Charmander|Fire||39|52|43|60|50|65|1|FALSE|  
+|5|Charmeleon|Fire||58|64|58|80|65|80|1|FALSE|  
+
+ 2. Now let's make a cool scatter plot with a little bit of color: 
+ `py plotme.py -f pokemon.csv -g scatter -y 6,7,8 -bgc green -gc darkblue -st False`
+
+![image](https://user-images.githubusercontent.com/57924116/113490775-c6737400-94a2-11eb-82b5-a576e0386568.png)
+
+ 3. Beautiful! Now let's put some meaningful labels on these axis, a title and change these markers a little: 
+ `py plotme.py -f pokemon.csv -g scatter -y 6,7,8 -bgc green -gc darkblue -st False -xl "Cool Stats" -yl "Numbers" -plot "My very own plot" -s p*+ -ss 80`
+
+![image](https://user-images.githubusercontent.com/57924116/113490953-c2942180-94a3-11eb-8e97-356096522775.png)
+
+4. Objectively better! 
 
 ## Using it as an imported module
 

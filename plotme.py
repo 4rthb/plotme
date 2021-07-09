@@ -6,6 +6,7 @@ import re
 import ast
 import numpy as np
 from matplotlib.colors import ListedColormap
+import matplotlib.gridspec as gridspec
 try:
     from matplotlib.colors import TwoSlopeNorm as nrm
 except:
@@ -48,7 +49,7 @@ class Plot:
             self.graphType = graphType
             self.output = output 
             self.sep = separator
-            self.x = int(x) - 1
+            self.x = int(x) - 1 if int(x)>0 else -(int(x) + 1)
             self.y = y 
             self.symbols = symbols 
             self.distBetSymbols = distBetSymbols 
@@ -82,11 +83,11 @@ class Plot:
         self.parser.add_argument("-fig", "--figSize", help="Size of the graph.\nValid arguments: (float,float) in inches", default=None)
         self.parser.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int", default=None)
         self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line graph.\nValid arguments: float", default=None)
-        self.parser.add_argument("-plot", "--plotTitle", help="Title that appears at the top of the graph.\nValid arguments: string", default=None)
+        self.parser.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the graph.\nValid arguments: string", default=None)
         self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string", default=None)
         self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string", default=None)
         self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes", default=None)
-        self.parser.add_argument("-lab", "--label", help="Ignores the # lines in the file", default=True, choices=['True', 'False'])
+        self.parser.add_argument("-hd", "--header", help="Ignores the # lines in the file", default=True, choices=['True', 'False'])
         self.parser.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
         self.parser.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
         self.parser.add_argument("-st", "--spineTran", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
@@ -99,7 +100,7 @@ class Plot:
         self.graphType = args.graphType
         self.output = args.output 
         self.sep = args.separator
-        self.x = int(args.x) - 1
+        self.x = int(args.x) - 1 if int(args.x)>0 else -(int(args.x) + 1)
         self.y = args.y 
         self.symbols = args.symbols 
         self.distBetSymbols = args.distBetSymbols 
@@ -111,10 +112,10 @@ class Plot:
         self.xLabel = args.xLabel
         self.yLabel = args.yLabel
         self.pieLabel = args.pieLabel
-        if args.label == 'False':
-            self.label = False
+        if args.header == 'False':
+            self.header = False
         else:
-            self.label = True
+            self.header = True
 
         self.data = self.openFile( self.fileName )
         self.bgColor = args.bgColor
@@ -176,25 +177,22 @@ class Plot:
             symb = 0
             i=0
             norm = nrm(vmin=-1,vmax=1,vcenter=0)
-            if 'marker' in args and len(args['marker']) != 1:
+            if 'marker' in args:
                 symb = args['marker']
                 args['marker'] = symb[0]
-            color=-0.9
-            data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.tile(color,data[data.columns[i]].count()), norm=norm, **args)
-            fig.delaxes(fig.axes[-1])
-            yAx.pop(0)
+            color=-1.1
             while yAx:
                 color+=0.2
                 if color>1:
                     color-=2
-                i+=1
+                data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.tile(color,data[data.columns[i]].count()), norm=norm, **args)
+                fig.delaxes(fig.axes[-1])
+                yAx.pop(0)
                 if symb:
                     if len(symb)>1:
                         symb.pop(0)
                     args['marker'] = symb[0]
-                data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.tile(color,data[data.columns[i]].count()), norm=norm, **args)
-                fig.delaxes(fig.axes[-1])
-                yAx.pop(0)
+                i+=1
 
         # finally, export the file
         ax1.set_facecolor(self.bgColor)
@@ -275,7 +273,7 @@ class Plot:
     def openFile(self, name):
 
         args = {}
-        if not self.label:
+        if not self.header:
 
             args['header'] = None
 
@@ -370,6 +368,12 @@ class Plot:
                 [newName, ext] = outName.split('.')
                 add = '.'
                 newName = path + newName
+            
+            #if there is no extension in the output name
+            else:
+                newName = path = outName
+                ext = "pdf"
+                add = "."
 
             #search if given extension is supported
             if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)$", ext):

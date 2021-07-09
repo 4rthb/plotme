@@ -49,7 +49,7 @@ class Plot:
             self.graphType = graphType
             self.output = output 
             self.sep = separator
-            self.x = int(x) - 1 if int(x)>0 else -(int(x) + 1)
+            self.x = int(x) - (int(x) % 1) if int(x)>=0 else -(int(x) + 1)
             self.y = y 
             self.symbols = symbols 
             self.distBetSymbols = distBetSymbols 
@@ -74,16 +74,16 @@ class Plot:
         self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
         self.parser.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'", default=".pdf")
-        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purpose.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters", default=',')
+        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters", default=',')
         self.parser.add_argument("-x", "--x", help="The x axis of the plot.\nValid arguments: Indexes of columns", default=1)
-        self.parser.add_argument("-y", "--y", help="The y axes of the plot.\nValid arguments: Indexes of columns(value, list or sequences)", default='2')
-        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Sequences matching the number of y indexes, with no separators\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nEx: sh+v3", default=None)
+        self.parser.add_argument("-y", "--y", help="The y axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])", default='2')
+        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nEx: sh+v3", default=None)
         self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: None, int, float, (int,int), [float,float], [int,int,int],(float,float,float)", default=None)
         self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol.\nValid arguments: float", default=None)
-        self.parser.add_argument("-fig", "--figSize", help="Size of the graph.\nValid arguments: (float,float) in inches", default=None)
+        self.parser.add_argument("-fig", "--figSize", help="Size of the graph and the exported image .\nValid arguments: (float,float) in inches", default=None)
         self.parser.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int", default=None)
-        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line graph.\nValid arguments: float", default=None)
-        self.parser.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the graph.\nValid arguments: string", default=None)
+        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float", default=None)
+        self.parser.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string", default=None)
         self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string", default=None)
         self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string", default=None)
         self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes", default=None)
@@ -100,7 +100,7 @@ class Plot:
         self.graphType = args.graphType
         self.output = args.output 
         self.sep = args.separator
-        self.x = int(args.x) - 1 if int(args.x)>0 else -(int(args.x) + 1)
+        self.x = int(args.x) - (int(args.x) % 1) if int(args.x)>=0 else -(int(args.x) + 1)
         self.y = args.y 
         self.symbols = args.symbols 
         self.distBetSymbols = args.distBetSymbols 
@@ -221,7 +221,7 @@ class Plot:
             args['x'] = self.x
 
         if self.graphType == 'pie' and self.pieLabel:
-            args['labels'] = self.pieLabel
+            args['labels'] = self.pieLabel.split(',')
 
         args['colormap'] = cmap
 

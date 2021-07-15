@@ -34,8 +34,8 @@ class Plot:
                 label=True,
                 bgColor = 'lightgrey',
                 gColor = "grey",
-                spineTran = True,
-                ci=False,
+                colors = None,
+                showSpine = True,
                 cmd=False ):
 
         if cmd:
@@ -49,7 +49,10 @@ class Plot:
             self.graphType = graphType
             self.output = output 
             self.sep = separator
-            self.x = int(x) - (int(x) % 1) if int(x)>=0 else -(int(x) + 1)
+            if int(x)>0:
+                self.x = int(x) - 1
+            else:
+                 raise ValueError(x + " is not a valid column index")
             self.y = y 
             self.symbols = symbols 
             self.distBetSymbols = distBetSymbols 
@@ -64,35 +67,41 @@ class Plot:
             self.label = label
             self.bgColor = bgColor
             self.gColor = gColor
-            self.spineTran = spineTran
-            self.ci = ci
+            self.colors = colors
+            self.showSpine = showSpine
+        self.colorMap = {"lightblue": -1, "yellow": 0.75, "grey": 0.5, "lightpink": 0.25, "brown": 0.1,
+                         "pink": -0.1, "orange": -0.25, "green": -0.5, "dark yellow": -0.75, "blue": -1}
 
     def parseCmd(self):
         #parses arguments
         self.parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
-        self.parser.add_argument("-f","--fileName", help="Name of the file that contains the data for the graph: name.extension", required=True)
-        self.parser.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
-        self.parser.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
-        self.parser.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'", default=".pdf")
-        self.parser.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters", default=',')
-        self.parser.add_argument("-x", "--x", help="The x axis of the plot.\nValid arguments: Indexes of columns", default=1)
-        self.parser.add_argument("-y", "--y", help="The y axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])", default='2')
-        self.parser.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nEx: sh+v3", default=None)
-        self.parser.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: None, int, float, (int,int), [float,float], [int,int,int],(float,float,float)", default=None)
-        self.parser.add_argument("-ss", "--symbolSize", help="Size of each symbol.\nValid arguments: float", default=None)
-        self.parser.add_argument("-fig", "--figSize", help="Size of the graph and the exported image .\nValid arguments: (float,float) in inches", default=None)
-        self.parser.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int", default=None)
-        self.parser.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float", default=None)
-        self.parser.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string", default=None)
-        self.parser.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string", default=None)
-        self.parser.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string", default=None)
-        self.parser.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes", default=None)
-        self.parser.add_argument("-hd", "--header", help="Ignores the # lines in the file", default=True, choices=['True', 'False'])
-        self.parser.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
-        self.parser.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
-        self.parser.add_argument("-st", "--spineTran", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
-        self.parser.add_argument("-ci", "--confidenceInterval", help="Makes a confidence interval over the whole database, the effect is to put a shadow representing the error", choices=['True', 'False'], default=False)
-
+        fileHandler = self.parser.add_argument_group("File handling arguments","The arguments that handle the data from the input file")
+        fileHandler.add_argument("-f","--fileName", help="Name of the file that contains the data for the graph: name.extension", required=True)
+        fileHandler.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters", default=',')
+        fileHandler.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'", default=".pdf")
+        fileHandler.add_argument("-x", "--x", help="The x axis of the plot.\nValid arguments: Indexes of columns", default=1)
+        fileHandler.add_argument("-y", "--y", help="The y axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])", default='2')
+        fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
+        fileHandler.add_argument("-hd", "--header", help="Ignores the # lines in the file", default=True, choices=['True', 'False'])
+        markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
+        markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)", default=None)
+        markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: None, int, float, (int,int), [float,float], [int,int,int],(float,float,float)", default=None)
+        markers.add_argument("-ss", "--symbolSize", help="Size of each symbol.\nValid arguments: float", default=None)
+        aesthetic = self.parser.add_argument_group("Image parameters","Arguments that handle color and other image features")
+        aesthetic.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
+        aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
+        aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
+        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s).\nValid arguments: ", default=None)
+        aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image .\nValid arguments: (float,float) in inches", default=None)
+        aesthetic.add_argument("-st", "--showSpine", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
+        self.writing = self.parser.add_argument_group("Writing arguments", "Parameters that handle the written words in the plot")
+        self.writing.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float", default=None)
+        self.writing.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string", default=None)
+        self.writing.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string", default=None)
+        self.writing.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string", default=None)
+        self.writing.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes", default=None)
+        self.writing.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int", default=None)
+        
         # and put the values in the class variables
         args = self.parser.parse_args()
         self.fileName = args.fileName
@@ -100,7 +109,10 @@ class Plot:
         self.graphType = args.graphType
         self.output = args.output 
         self.sep = args.separator
-        self.x = int(args.x) - (int(args.x) % 1) if int(args.x)>=0 else -(int(args.x) + 1)
+        if int(args.x)>0:
+            self.x = int(args.x) - 1
+        else:
+            raise ValueError(args.x + " is not a valid column index")
         self.y = args.y 
         self.symbols = args.symbols 
         self.distBetSymbols = args.distBetSymbols 
@@ -116,20 +128,14 @@ class Plot:
             self.header = False
         else:
             self.header = True
-
         self.data = self.openFile( self.fileName )
         self.bgColor = args.bgColor
         self.gColor = args.gColor
-
-        if args.spineTran == 'True':
-            self.spineTran = True
+        self.colors = args.colors
+        if args.showSpine == 'True':
+            self.showSpine = True
         else:
-            self.spineTran = False
-        
-        if args.confidenceInterval == 'True':
-            self.ci = True
-        else:
-            self.ci = False
+            self.showSpine = False
 
     def plotGraph(self):
         data = self.data
@@ -146,27 +152,18 @@ class Plot:
             yAxis = "".join(yAxis)
             yAxis = int(yAxis)
 
+        if self.colors:
+            self.colors = self.colors.split(',')
+            if len(self.colors) != len(yAxis):
+                raise ValueError("The number of declared colors is different than the number of abscissas")
+
         # get the list of the parameters
         args = self.getParameters(yAxis, cmap, columns[self.x])
 
         fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
         # make the correct type of graph
         if self.graphType == 'line':
-            if not self.ci: 
-                data.plot(kind='line', ax=ax1, **args)
-            
-            # if the confidence interval is requested
-            else:
-                # calculate the mean and standard deviation
-                std = data[yAxis].std(axis=1)
-                mean = data[yAxis].mean(axis=1)
-
-                xaxis = columns[self.x]
-                x= data.groupby(xaxis)[xaxis].mean().keys().values
-                args['y'] = yAxis
-                plt.plot( data[columns[self.x]].to_numpy(), mean.to_numpy() )
-                plt.fill_between(x, mean+std, mean-std, alpha=0.25, cmap=cmap, rasterized=True)
-
+            data.plot(kind='line', ax=ax1, **args)
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':
@@ -180,12 +177,22 @@ class Plot:
             if 'marker' in args:
                 symb = args['marker']
                 args['marker'] = symb[0]
+            dist = 0
+            if 'markevery' in args:
+                dist = args['markevery']
+                args.pop('markevery')
+                data.drop(data.loc[::dist,:].index, inplace=True)
             color=-1.1
             while yAx:
-                color+=0.2
-                if color>1:
-                    color-=2
-                data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.tile(color,data[data.columns[i]].count()), norm=norm, **args)
+                if not self.colors:
+                    color+=0.2
+                    if color>1:
+                        color-=2
+                else:
+                    if self.colors[i] not in self.colorMap:
+                        raise ValueError('Color not compatible')
+                    color=self.colorMap[self.colors[i]]
+                data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.repeat(color,len(data)), norm=norm, **args)
                 fig.delaxes(fig.axes[-1])
                 yAx.pop(0)
                 if symb:
@@ -198,7 +205,7 @@ class Plot:
         ax1.set_facecolor(self.bgColor)
         ax1.set_clip_on(False)
         ax1.tick_params(grid_color=self.gColor)
-        if self.spineTran:
+        if self.showSpine:
             ax1.spines['bottom'].set_visible(False)
             ax1.spines['top'].set_visible(False)
             ax1.spines['right'].set_visible(False)
@@ -208,6 +215,10 @@ class Plot:
             ax1.spines['top'].set_color(self.gColor)
             ax1.spines['right'].set_color(self.gColor)
             ax1.spines['left'].set_color(self.gColor)
+        if self.xLabel:
+            ax1.set_xlabel(self.xLabel)
+        if self.yLabel:
+            ax1.set_ylabel(self.yLabel)
         plt.show()
         self.exportFile(self.output, self.fileName, fig)
 
@@ -244,14 +255,14 @@ class Plot:
                     self.symbolSize = [str(floatpoint) for floatpoint in self.symbolSize]
                     self.symbolSize = "".join(self.symbolSize)
                 args['markersize'] = float(self.symbolSize)
-            if self.distBetSymbols and type(self.distBetSymbols) != int and type(self.distBetSymbols) != float:
-                args['markevery'] = ast.literal_eval(self.distBetSymbols)
 
         if self.graphType == 'line' or self.graphType == 'scatter':
             if self.symbols:
                 args['marker'] = self.symbols
             if self.graphType == 'scatter' and self.symbols:
                 args['marker'] = re.findall(r"\w{1}|[^\w\s]", args['marker'])
+            if self.distBetSymbols and type(self.distBetSymbols) != int and type(self.distBetSymbols) != float:
+                args['markevery'] = ast.literal_eval(self.distBetSymbols)
         
         if self.graphType == 'scatter':
             if self.symbolSize:
@@ -262,12 +273,7 @@ class Plot:
         
         if self.fontSize:
             args['fontsize'] = self.fontSize
-
-        if self.yLabel:
-            args['ylabel'] = self.yLabel
-        if self.xLabel:
-            args['xlabel'] = self.xLabel
-
+            
         return args
 
     def openFile(self, name):

@@ -35,7 +35,7 @@ class Plot:
                 bgColor = 'lightgrey',
                 gColor = "grey",
                 colors = None,
-                showSpine = True,
+                hideSpine = True,
                 cmd=False ):
 
         if cmd:
@@ -68,7 +68,7 @@ class Plot:
             self.bgColor = bgColor
             self.gColor = gColor
             self.colors = colors
-            self.showSpine = showSpine
+            self.hideSpine = hideSpine
         self.colorMap = {"lightblue": -1, "yellow": 0.75, "grey": 0.5, "lightpink": 0.25, "brown": 0.1,
                          "pink": -0.1, "orange": -0.25, "green": -0.5, "dark yellow": -0.75, "blue": -1}
 
@@ -91,9 +91,9 @@ class Plot:
         aesthetic.add_argument("-p", "--setPalette", help="Graph color palette", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
         aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
-        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s).\nValid arguments: ", default=None)
+        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s).\nValid arguments: 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'", default=None)
         aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image .\nValid arguments: (float,float) in inches", default=None)
-        aesthetic.add_argument("-st", "--showSpine", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
+        aesthetic.add_argument("-st", "--hideSpine", help="Removes the spines from the graph", default='True', choices=['True', 'False'])
         self.writing = self.parser.add_argument_group("Writing arguments", "Parameters that handle the written words in the plot")
         self.writing.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float", default=None)
         self.writing.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string", default=None)
@@ -132,10 +132,10 @@ class Plot:
         self.bgColor = args.bgColor
         self.gColor = args.gColor
         self.colors = args.colors
-        if args.showSpine == 'True':
-            self.showSpine = True
+        if args.hideSpine == 'True':
+            self.hideSpine = True
         else:
-            self.showSpine = False
+            self.hideSpine = False
 
     def plotGraph(self):
         data = self.data
@@ -163,7 +163,19 @@ class Plot:
         fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
         # make the correct type of graph
         if self.graphType == 'line':
-            data.plot(kind='line', ax=ax1, **args)
+            yAx=args.pop('y')
+            colors=args.pop('colormap')
+            if self.colors:
+                colors=self.colors
+            markers = args['marker'] if 'marker' in args else ["None"]
+            if 'marker' in args:
+                args.pop('marker') 
+            while colors:
+                data.plot(kind='line', ax=ax1, y=yAx[0], marker=markers[0], color=colors[0], **args)
+                colors.pop(0)
+                yAx.pop(0)
+                if len(markers)>1:
+                    markers.pop(0)
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':
@@ -181,7 +193,7 @@ class Plot:
             if 'markevery' in args:
                 dist = args['markevery']
                 args.pop('markevery')
-                data.drop(data.loc[::dist,:].index, inplace=True)
+                data = data.loc[::dist,:]
             color=-1.1
             while yAx:
                 if not self.colors:
@@ -205,7 +217,7 @@ class Plot:
         ax1.set_facecolor(self.bgColor)
         ax1.set_clip_on(False)
         ax1.tick_params(grid_color=self.gColor)
-        if self.showSpine:
+        if self.hideSpine:
             ax1.spines['bottom'].set_visible(False)
             ax1.spines['top'].set_visible(False)
             ax1.spines['right'].set_visible(False)
@@ -246,6 +258,8 @@ class Plot:
             args['figsize'] = tuple(args['figsize'])
         
         if self.graphType == 'line':
+            if self.symbols:
+                args['marker'] = list(self.symbols)
             if self.lineWidth:
                 self.lineWidth = [str(width) for width in self.lineWidth]
                 self.lineWidth = "".join(self.lineWidth)
@@ -257,14 +271,14 @@ class Plot:
                 args['markersize'] = float(self.symbolSize)
 
         if self.graphType == 'line' or self.graphType == 'scatter':
-            if self.symbols:
-                args['marker'] = self.symbols
             if self.graphType == 'scatter' and self.symbols:
                 args['marker'] = re.findall(r"\w{1}|[^\w\s]", args['marker'])
             if self.distBetSymbols and type(self.distBetSymbols) != int and type(self.distBetSymbols) != float:
                 args['markevery'] = ast.literal_eval(self.distBetSymbols)
         
         if self.graphType == 'scatter':
+            if self.symbols:
+                args['marker'] = self.symbols
             if self.symbolSize:
                 args['s'] = float(self.symbolSize)
 

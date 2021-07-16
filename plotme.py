@@ -82,7 +82,7 @@ class Plot:
         fileHandler.add_argument("-x", "--x", help="The x axis of the plot.\nValid arguments: Indexes of columns\nExamples:\n    python3 plotme.py -f file -x 2", default=1)
         fileHandler.add_argument("-y", "--y", help="The y axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])\nExamples:\n    python3 plotme.py -f file -y 5-7\n    python3 plotme.py -f file -y 5,6,7", default='2')
         fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted\nExamples:\n    python3 plotme.py -f file -g bar", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
-        fileHandler.add_argument("-hd", "--header", help="Ignores the # lines in the file\nExamples:\n    python3 plotme.py -f file -hd False", default=True, choices=['True', 'False'])
+        fileHandler.add_argument("-hd", "--header", help="Ignores lines starting with # in the input file (see -f)\nExamples:\n    python3 plotme.py -f file -hd False", default=True, choices=['True', 'False'])
         markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
         markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nExamples:\n    python3 plotme.py -f file -y 2,3 -s vH\n    python3 plotme.py -f file -y 2-6 -s vHddv\n    python3 plotme.py -f file -y 2-6 -s v\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)", default=None)
         markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: int\nExamples:\n    python3 plotme.py -f file -d 3", default=None)
@@ -92,15 +92,15 @@ class Plot:
         aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -bgc black\n    python3 plotme.py -f file -bgc '#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
         aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file '#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
         aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s).\nValid arguments: 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green", default=None)
-        aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image .\nValid arguments: (float,float) in inches\nExamples:\n    python3 plotme.py -f file -fig 192,108", default=None)
+        aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image (Bounding Box).\nValid arguments: (float,float) in inches\nExamples:\n    python3 plotme.py -f file -fig 192,108", default=None)
         aesthetic.add_argument("-st", "--hideSpine", help="Removes the spines from the graph\nExamples:\n    python3 plotme.py -f file -st True", default='True', choices=['True', 'False'])
-        self.writing = self.parser.add_argument_group("Writing arguments", "Parameters that handle the written words in the plot")
-        self.writing.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -l 15", default=None)
-        self.writing.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -pt 'Tile of the plot'", default=None)
-        self.writing.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -xl 'label of x'", default=None)
-        self.writing.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -yl 'label of y'", default=None)
-        self.writing.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes\nExamples:\n    python3 plotme.py -f file -g pie -pl slice1,'another slice',3", default=None)
-        self.writing.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int\nExamples:\n    python3 plotme.py -f file -fs 14", default=None)
+        aesthetic.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -l 15", default=None)
+        text = self.parser.add_argument_group("Text/Font arguments", "Parameters that handle the texts in the plot")
+        text.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -pt 'Tile of the plot'", default=None)
+        text.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -xl 'label of x'", default=None)
+        text.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -yl 'label of y'", default=None)
+        text.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes\nExamples:\n    python3 plotme.py -f file -g pie -pl slice1,'another slice',3", default=None)
+        text.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int\nExamples:\n    python3 plotme.py -f file -fs 14", default=None)
         
         # and put the values in the class variables
         args = self.parser.parse_args()
@@ -163,19 +163,29 @@ class Plot:
         fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
         # make the correct type of graph
         if self.graphType == 'line':
-            yAx=args.pop('y')
-            colors=args.pop('colormap')
+            colors=0
             if self.colors:
+                yAx=args.pop('y')
+                args.pop('colormap')
                 colors=self.colors
-            markers = args['marker'] if 'marker' in args else ["None"]
+            markers = args['marker'] if 'marker' in args else ['']
             if 'marker' in args:
                 args.pop('marker') 
-            while colors:
-                data.plot(kind='line', ax=ax1, y=yAx[0], marker=markers[0], color=colors[0], **args)
-                colors.pop(0)
-                yAx.pop(0)
-                if len(markers)>1:
-                    markers.pop(0)
+            if not colors:
+                flag=2
+                while flag:
+                    data.plot(kind='line', ax=ax1, marker=markers[0], **args)
+                    if len(markers)>1:
+                        markers.pop(0)
+                    else:
+                        flag-=1
+            else:
+                while yAx:
+                    data.plot(kind='line', ax=ax1, y=yAx[0], marker=markers[0], color=colors[0], **args)
+                    colors.pop(0)
+                    yAx.pop(0)
+                    if len(markers)>1:
+                        markers.pop(0)
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':

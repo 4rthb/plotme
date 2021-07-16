@@ -5,20 +5,20 @@
 | Verbose            | Short    | Default       | Description                                           | Valid Values                                           |
 |--------------------|:--------:|:-------------:|:-----------------------------------------------------:|:------------------------------------------------------:|
 | _--fileName_       | _-f_     | `required`    | Name of the file that contains the data for the graph | `name with or without path`.`extension`                |
-| _--separator_   | _-sep_ | , | Defines the separator used in the input file, for parsing purposes. | ' ', '\\t', regular expressions and other file delimiters |
+| _--separator_ | _-sep_ | ,(comma) | Defines the separator used in the input file, for parsing purposes. | ' ', '\\t', regular expressions and other file delimiters |
 | _--output_         | _-o_     | .pdf          | Name and/or extension of the output file              | '.png', 'name', 'name.png'                             |
-| _--x_              | _-x_     | first column  | The x axis of the plot                                | Indexes of columns                                     |
-| _--y_              | _-y_     | second column | The y axis of the plot                     | Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4] |
+| _--x_              | _-x_     | first column  | The x axis of the plot                                | Indexes of columns                             *       |
+| _--y_              | _-y_     | second column | The y axis of the plot             | Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4] *       |
 | _--graphType_      | _-g_     | line          | Type of graph that will be plotted                    | line, scatter, pie and bar                             |
-| _--header_         | _-hd_    | True          | Ignores the # lines in the file                       | `True` or `False`                                      |
+| _--header_         | _-hd_    | True       | Ignores lines starting with # in the input file (see -f) | `True` or `False`                                      |
 | _--symbols_        | _-s_     | point symbol  | Shape of the symbols used     | Lists [ex: vhD] or values in https://matplotlib.org/3.1.0/api/markers_api.html |
 | _--distBetSymbols_ | _-d_     | auto          | Distance between each symbol                          | `int`                                                  |
 | _--symbolSize_     | _-ss_    | auto          | Size of each symbol                                   | `float`                                                |
 | _--setPalette_     | _-p_     | colorblind    | Graph color palette                                   | deep, muted, pastel, bright, dark and colorblind       |
-| _--bgColor_        | _-bgc_   | lightgrey     | Changes the color of the background                   | 'red','black','lightyellow','#abc','#ff701E'   *       |
-| _--gColor_         | _-gc_    | grey          | Color of the grid                                     | 'red','black','lightyellow','#abc','#ff701E'   *       |
-| _--colors_         | _-c_     | cycles default colors | Selects the colors of the plotted abscissa(s) | 'lightblue', 'yellow', 'grey', 'lightpink',... **      |
-| _--figSize_        | _-fig_   | auto          | Size of the graph and the exported image              | `float,float`                                          |
+| _--bgColor_        | _-bgc_   | lightgrey     | Changes the color of the background                   | 'red','black','lightyellow','#abc','#ff701E'   **      |
+| _--gColor_         | _-gc_    | grey          | Color of the grid                                     | 'red','black','lightyellow','#abc','#ff701E'   **      |
+| _--colors_         | _-c_     | cycles default colors | Selects the colors of the plotted abscissa(s) | 'lightblue', 'yellow', 'grey', 'lightpink',... ***     |
+| _--figSize_        | _-fig_   | auto        | Size of the graph and the exported image (Bounding Box) | `float,float`                                          |
 | _--hideSpine_      | _-st_    | True          | Removes the spines from the graph                     | `True` or `False`                                      |
 | _--lineWidth_      | _-l_     | auto          | Size of the line on a Line plot                       | `int` or `float`                                       |
 | _--plotTitle_      | _-pt_    | none          | Title that appears at the top of the plot             | `string`                                               |
@@ -27,8 +27,9 @@
 | _--pieLabel_       | _-pl_    | none          | Label each slice of the pie                           | `string1,string2,...,stringN`                          |
 | _--fontSize_       | _-fs_    | auto          | Size of the font used in the graph itself             | `int`                                                  |
 
-* See https://matplotlib.org/stable/tutorials/colors/colors.html for more examples
-** 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'
+* Column indexes begin at 1, not 0
+** See https://matplotlib.org/stable/tutorials/colors/colors.html for more examples
+*** 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'
 
 ## Examples
  - Line plot: `py plotme.py -f (path)filename.extension -x columnIndex -y columnIndex`
@@ -39,12 +40,14 @@
  - Pie chart with labels on each slice while using a tab separated input file: `py plotme.py -f (path)filename.extension -sep '\t' -pl label,label2,...,labelN`
     - The first item in the column is interpreted as the label of the axis, the subsequent itens in that column **NEED** to be of type int or float
     - Each label corresponds to a single slice in the chart, from 1 to N, every label is assigned a slice following the file order. The number of labels need to be the same as the number of elements in the column.
-### Parameters examples   
+### Parameters examples  
+   - f:              `python3 plotme.py -f 'name with spaces.csv'`
    - separator:      `python3 plotme.py -f file.txt -sep \t`
+                     `python3 plotme.py -f file.csv -sep ,`
    - output:         `python3 plotme.py -f file -o outputFile`
                      `python3 plotme.py -f file -o .tiff`
                      `python3 plotme.py -f file -o export.jpeg`
-   - x:              `python3 plotme.py -f file -x 2`            
+   - x:              `python3 plotme.py -f file -x 1`            
    - y:              `python3 plotme.py -f file -y 5-7`
                      `python3 plotme.py -f file -y 5,6,7`
    - graphType       `python3 plotme.py -f file -g bar`   

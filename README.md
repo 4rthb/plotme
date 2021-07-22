@@ -78,4 +78,4 @@
 
 ### Use python3, as well as pip3 to install the dependencies
 
-### Dependencies: seaborn, matplotlib, pandas, argparse, re, ast
+### Dependencies: seaborn, matplotlib, pandas, argparse, re, ast, itertools

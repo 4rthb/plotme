@@ -91,7 +91,7 @@ class Plot:
         aesthetic.add_argument("-p", "--setPalette", help="Graph color palette\nExamples:\n    python3 plotme.py -f file -p deep", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -bgc black\n    python3 plotme.py -f file -bgc '#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
         aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file '#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
-        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s) in the scatter and line plots.\nValid arguments: 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green", default=None)
+        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s) in the scatter and line plots.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green\n    python3 plotme.py -f file -y 2,4 -c '#ff701E','#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default=None)
         aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image (Bounding Box).\nValid arguments: (float,float) in inches\nExamples:\n    python3 plotme.py -f file -fig 192,108", default=None)
         aesthetic.add_argument("-st", "--hideSpine", help="Removes the spines from the graph\nExamples:\n    python3 plotme.py -f file -st True", default='True', choices=['True', 'False'])
         aesthetic.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -l 15", default=None)
@@ -173,17 +173,10 @@ class Plot:
             markers = args['marker'] if 'marker' in args else ['']
             if 'marker' in args:
                 args.pop('marker') 
-            if not colors:
-                for y in yAx:
-                    data.plot(kind='line', ax=ax1, y=y, marker=markers[0], color = next(colors), **args)
-                    if len(markers)>1:
-                        markers.pop(0)
-            else:
-                while yAx:
-                    data.plot(kind='line', ax=ax1, y=yAx[0], marker=markers[0], color=next(colors), **args)
-                    yAx.pop(0)
-                    if len(markers)>1:
-                        markers.pop(0)
+            for y in yAx:
+                data.plot(kind='line', ax=ax1, y=y, marker=markers[0], color = next(colors), **args)
+                if len(markers)>1:
+                    markers.pop(0)
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':

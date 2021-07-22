@@ -17,7 +17,7 @@
 | _--setPalette_     | _-p_     | colorblind    | Graph color palette                                   | deep, muted, pastel, bright, dark and colorblind       |
 | _--bgColor_        | _-bgc_   | lightgrey     | Changes the color of the background                   | 'red','black','lightyellow','#abc','#ff701E'   **      |
 | _--gColor_         | _-gc_    | grey          | Color of the grid                                     | 'red','black','lightyellow','#abc','#ff701E'   **      |
-| _--colors_ | _-c_ | cycles default colors | Selects the colors of the plotted abscissa(s) in the scatter and line plots | 'lightblue', 'yellow', 'grey', 'lightpink',... ***     |
+| _--colors_ | _-c_ | cycles default colors | Selects the colors of the plotted abscissa(s) in the scatter and line plots | 'red','black','lightyellow','#abc','#ff701E'   ** |
 | _--figSize_        | _-fig_   | auto        | Size of the graph and the exported image (Bounding Box) | `float,float`                                          |
 | _--hideSpine_      | _-st_    | True          | Removes the spines from the graph                     | `True` or `False`                                      |
 | _--lineWidth_      | _-l_     | auto          | Size of the line on a Line plot                       | `int` or `float`                                       |
@@ -62,6 +62,7 @@
                      `python3 plotme.py -f file -bgc '#ff701E'`
    - gColor          `python3 plotme.py -f file '#abc'`
    - colors          `python3 plotme.py -f file -y 2,4 -c yellow,green`
+                     `python3 plotme.py -f file -y 2,4 -c '#ff701E','#abc'`
    - figSize         `python3 plotme.py -f file -fig 192,108`
    - hideSpine       `python3 plotme.py -f file -st True`
    - lineWidth       `python3 plotme.py -f file -l 15`

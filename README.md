@@ -7,8 +7,8 @@
 | _--fileName_       | _-f_     | `required`    | Name of the file that contains the data for the graph | `name with or without path`.`extension`                |
 | _--separator_ | _-sep_ | ,(comma) | Defines the separator used in the input file, for parsing purposes. | ' ', '\\t', regular expressions and other file delimiters |
 | _--output_         | _-o_     | .pdf          | Name and/or extension of the output file              | '.png', 'name', 'name.png'                             |
-| _--x_              | _-x_     | first column  | The x axis of the plot                                | Indexes of columns                             *       |
-| _--y_              | _-y_     | second column | The y axis of the plot             | Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4] *       |
+| _--x_              | _-x_     | first column  | The x-axis of the plot                                | Indexes of columns                             *       |
+| _--y_              | _-y_     | second column | The y-axis of the plot             | Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4] *       |
 | _--graphType_      | _-g_     | line          | Type of graph that will be plotted                    | line, scatter, pie and bar                             |
 | _--header_         | _-hd_    | True       | Ignores lines starting with # in the input file (see -f) | `True` or `False`                                      |
 | _--symbols_        | _-s_     | point symbol  | Shape of the symbols used     | Lists [ex: vhD] or values in https://matplotlib.org/3.1.0/api/markers_api.html |
@@ -17,7 +17,7 @@
 | _--setPalette_     | _-p_     | colorblind    | Graph color palette                                   | deep, muted, pastel, bright, dark and colorblind       |
 | _--bgColor_        | _-bgc_   | lightgrey     | Changes the color of the background                   | 'red','black','lightyellow','#abc','#ff701E'   **      |
 | _--gColor_         | _-gc_    | grey          | Color of the grid                                     | 'red','black','lightyellow','#abc','#ff701E'   **      |
-| _--colors_         | _-c_     | cycles default colors | Selects the colors of the plotted abscissa(s) | 'lightblue', 'yellow', 'grey', 'lightpink',... ***     |
+| _--colors_ | _-c_ | cycles default colors | Selects the colors of the plotted abscissa(s) in the scatter and line plots | 'lightblue', 'yellow', 'grey', 'lightpink',... ***     |
 | _--figSize_        | _-fig_   | auto        | Size of the graph and the exported image (Bounding Box) | `float,float`                                          |
 | _--hideSpine_      | _-st_    | True          | Removes the spines from the graph                     | `True` or `False`                                      |
 | _--lineWidth_      | _-l_     | auto          | Size of the line on a Line plot                       | `int` or `float`                                       |

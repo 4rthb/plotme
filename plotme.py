@@ -5,8 +5,8 @@ import argparse
 import re
 import ast
 import numpy as np
+import itertools
 from matplotlib.colors import ListedColormap
-import matplotlib.gridspec as gridspec
 try:
     from matplotlib.colors import TwoSlopeNorm as nrm
 except:
@@ -52,7 +52,7 @@ class Plot:
             if int(x)>0:
                 self.x = int(x) - 1
             else:
-                 raise ValueError(x + " is not a valid column index")
+                 raise Exception(x + " is not a valid column index")
             self.y = y 
             self.symbols = symbols 
             self.distBetSymbols = distBetSymbols 
@@ -79,8 +79,8 @@ class Plot:
         fileHandler.add_argument("-f","--fileName", help="Name of the file that contains the data for the graph: name.extension", required=True)
         fileHandler.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters\nExamples:\n    python3 plotme.py -f file.txt -sep \\t", default=',')
         fileHandler.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'\nExamples:\n    python3 plotme.py -f file -o outputFile\n    python3 plotme.py -f file -o .tiff\n    python3 plotme.py -f file -o export.jpeg", default=".pdf")
-        fileHandler.add_argument("-x", "--x", help="The x axis of the plot.\nValid arguments: Indexes of columns\nExamples:\n    python3 plotme.py -f file -x 2", default=1)
-        fileHandler.add_argument("-y", "--y", help="The y axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])\nExamples:\n    python3 plotme.py -f file -y 5-7\n    python3 plotme.py -f file -y 5,6,7", default='2')
+        fileHandler.add_argument("-x", "--x", help="The x-axis of the plot.\nValid arguments: Indexes of columns\nExamples:\n    python3 plotme.py -f file -x 1", default=1)
+        fileHandler.add_argument("-y", "--y", help="The y-axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])\nExamples:\n    python3 plotme.py -f file -y 5-7\n    python3 plotme.py -f file -y 5,6,7", default='2')
         fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted\nExamples:\n    python3 plotme.py -f file -g bar", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
         fileHandler.add_argument("-hd", "--header", help="Ignores lines starting with # in the input file (see -f)\nExamples:\n    python3 plotme.py -f file -hd False", default=True, choices=['True', 'False'])
         markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
@@ -91,7 +91,7 @@ class Plot:
         aesthetic.add_argument("-p", "--setPalette", help="Graph color palette\nExamples:\n    python3 plotme.py -f file -p deep", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
         aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -bgc black\n    python3 plotme.py -f file -bgc '#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
         aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file '#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
-        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s).\nValid arguments: 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green", default=None)
+        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s) in the scatter and line plots.\nValid arguments: 'lightblue', 'yellow', 'grey', 'lightpink', 'brown', 'pink', 'orange', 'green', 'dark yellow', 'blue'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green", default=None)
         aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image (Bounding Box).\nValid arguments: (float,float) in inches\nExamples:\n    python3 plotme.py -f file -fig 192,108", default=None)
         aesthetic.add_argument("-st", "--hideSpine", help="Removes the spines from the graph\nExamples:\n    python3 plotme.py -f file -st True", default='True', choices=['True', 'False'])
         aesthetic.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -l 15", default=None)
@@ -112,7 +112,7 @@ class Plot:
         if int(args.x)>0:
             self.x = int(args.x) - 1
         else:
-            raise ValueError(args.x + " is not a valid column index")
+            raise Exception(args.x + " is not a valid column index")
         self.y = args.y 
         self.symbols = args.symbols 
         self.distBetSymbols = args.distBetSymbols 
@@ -153,9 +153,10 @@ class Plot:
             yAxis = int(yAxis)
 
         if self.colors:
-            self.colors = self.colors.split(',')
-            if len(self.colors) != len(yAxis):
-                raise ValueError("The number of declared colors is different than the number of abscissas")
+            count = self.colors.split(',')
+            self.colors = itertools.cycle(count)
+            if len(count) != len(yAxis):
+                raise Exception("The number of declared colors is different than the number of abscissas")
 
         # get the list of the parameters
         args = self.getParameters(yAxis, cmap, columns[self.x])
@@ -163,26 +164,23 @@ class Plot:
         fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
         # make the correct type of graph
         if self.graphType == 'line':
-            colors=0
+            yAx=args.pop('y')
             if self.colors:
-                yAx=args.pop('y')
-                args.pop('colormap')
                 colors=self.colors
+            else:
+                colors=itertools.cycle(cmap.colors)
+            args.pop('colormap')
             markers = args['marker'] if 'marker' in args else ['']
             if 'marker' in args:
                 args.pop('marker') 
             if not colors:
-                flag=2
-                while flag:
-                    data.plot(kind='line', ax=ax1, marker=markers[0], **args)
+                for y in yAx:
+                    data.plot(kind='line', ax=ax1, y=y, marker=markers[0], color = next(colors), **args)
                     if len(markers)>1:
                         markers.pop(0)
-                    else:
-                        flag-=1
             else:
                 while yAx:
-                    data.plot(kind='line', ax=ax1, y=yAx[0], marker=markers[0], color=colors[0], **args)
-                    colors.pop(0)
+                    data.plot(kind='line', ax=ax1, y=yAx[0], marker=markers[0], color=next(colors), **args)
                     yAx.pop(0)
                     if len(markers)>1:
                         markers.pop(0)
@@ -210,12 +208,10 @@ class Plot:
                     color+=0.2
                     if color>1:
                         color-=2
+                    data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.repeat(color,len(data)), norm=norm, **args)
+                    fig.delaxes(fig.axes[-1])
                 else:
-                    if self.colors[i] not in self.colorMap:
-                        raise ValueError('Color not compatible')
-                    color=self.colorMap[self.colors[i]]
-                data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.repeat(color,len(data)), norm=norm, **args)
-                fig.delaxes(fig.axes[-1])
+                    data.plot(kind='scatter', ax=ax1, y=yAx[0], c=next(self.colors), **args)
                 yAx.pop(0)
                 if symb:
                     if len(symb)>1:
@@ -241,7 +237,8 @@ class Plot:
             ax1.set_xlabel(self.xLabel)
         if self.yLabel:
             ax1.set_ylabel(self.yLabel)
-        plt.show()
+        if self.output == '.pdf':           # default value: shows plot, else: only saves the image
+            plt.show()
         self.exportFile(self.output, self.fileName, fig)
 
     def getParameters(self, y, cmap, x):
@@ -281,14 +278,12 @@ class Plot:
                 args['markersize'] = float(self.symbolSize)
 
         if self.graphType == 'line' or self.graphType == 'scatter':
-            if self.graphType == 'scatter' and self.symbols:
-                args['marker'] = re.findall(r"\w{1}|[^\w\s]", args['marker'])
             if self.distBetSymbols and type(self.distBetSymbols) != int and type(self.distBetSymbols) != float:
                 args['markevery'] = ast.literal_eval(self.distBetSymbols)
         
         if self.graphType == 'scatter':
             if self.symbols:
-                args['marker'] = self.symbols
+                args['marker'] = list(self.symbols)
             if self.symbolSize:
                 args['s'] = float(self.symbolSize)
 
@@ -424,7 +419,7 @@ class Plot:
                     fName=rmvName
             fig.savefig(fName+'Plot'+outName, bbox_inches="tight", facecolor=fig.get_facecolor(), transparent=True)
 
-            print(f'File {fName}Plot{outName} saved succesfully')
+        print(f'File {fName}Plot{outName} saved succesfully')
 
 if __name__ == "__main__":
     instance = Plot(cmd=True)

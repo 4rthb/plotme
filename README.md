@@ -17,13 +17,13 @@
 | _--setPalette_     | _-p_     | colorblind    | Graph color palette                                   | deep, muted, pastel, bright, dark and colorblind       |
 | _--bgColor_        | _-bgc_   | lightgrey     | Changes the color of the background                   | 'red','black','lightyellow','#abc','#ff701E'   **      |
 | _--gColor_         | _-gc_    | grey          | Color of the grid                                     | 'red','black','lightyellow','#abc','#ff701E'   **      |
-| _--colors_ | _-c_ | cycles default colors | Selects the colors of the plotted abscissa(s) in the scatter and line plots | 'red','black','lightyellow','#abc','#ff701E'   ** |
+| _--colors_ | _-c_ | cycles default colors | Selects the colors of the plotted y-axes in the scatter and line plots | 'red','black','lightyellow','#abc','#ff701E'   ** |
 | _--figSize_        | _-fig_   | auto        | Size of the graph and the exported image (Bounding Box) | `float,float`                                          |
 | _--hideSpine_      | _-st_    | True          | Removes the spines from the graph                     | `True` or `False`                                      |
 | _--lineWidth_      | _-l_     | auto          | Size of the line on a Line plot                       | `int` or `float`                                       |
 | _--plotTitle_      | _-pt_    | none          | Title that appears at the top of the plot             | `string`                                               |
-| _--xLabel_         | _-xl_    | column name   | Label of the abscissa                                 | `string`                                               |
-| _--yLabel_         | _-yl_    | column name   | Label of the ordinate(s)                              | `string`                                               |
+| _--xLabel_         | _-xl_    | column name   | Label of the x-axis                                   | `string`                                               |
+| _--yLabel_         | _-yl_    | column name   | Label of the y-axis                                   | `string`                                               |
 | _--pieLabel_       | _-pl_    | none          | Label each slice of the pie                           | `string1,string2,...,stringN`                          |
 | _--fontSize_       | _-fs_    | auto          | Size of the font used in the graph itself             | `int`                                                  |
 

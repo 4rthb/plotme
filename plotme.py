@@ -77,30 +77,30 @@ class Plot:
         self.parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
         fileHandler = self.parser.add_argument_group("File handling arguments","The arguments that handle the data from the input file")
         fileHandler.add_argument("-f","--fileName", help="Name of the file that contains the data for the graph: name.extension", required=True)
-        fileHandler.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters\nExamples:\n    python3 plotme.py -f file.txt -sep \\t", default=',')
-        fileHandler.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'\nExamples:\n    python3 plotme.py -f file -o outputFile\n    python3 plotme.py -f file -o .tiff\n    python3 plotme.py -f file -o export.jpeg", default=".pdf")
-        fileHandler.add_argument("-x", "--x", help="The x-axis of the plot.\nValid arguments: Indexes of columns\nExamples:\n    python3 plotme.py -f file -x 1", default=1)
-        fileHandler.add_argument("-y", "--y", help="The y-axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])\nExamples:\n    python3 plotme.py -f file -y 5-7\n    python3 plotme.py -f file -y 5,6,7", default='2')
-        fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted\nExamples:\n    python3 plotme.py -f file -g bar", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
-        fileHandler.add_argument("-hd", "--header", help="Ignores lines starting with # in the input file (see -f)\nExamples:\n    python3 plotme.py -f file -hd False", default=True, choices=['True', 'False'])
+        fileHandler.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters\nExamples:\n    python3 plotme.py -f file.txt -sep \\t\nDefault: Comma(,)", default=',')
+        fileHandler.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'\nExamples:\n    python3 plotme.py -f file -o outputFile\n    python3 plotme.py -f file -o .tiff\n    python3 plotme.py -f file -o export.jpeg\nDefault: .pdf", default=".pdf")
+        fileHandler.add_argument("-x", "--x", help="The x-axis of the plot.\nValid arguments: Indexes of columns\nExamples:\n    python3 plotme.py -f file -x 1\nDefault: 1", default=1)
+        fileHandler.add_argument("-y", "--y", help="The y-axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])\nExamples:\n    python3 plotme.py -f file -y 5-7\n    python3 plotme.py -f file -y 5,6,7\nDefault: 2", default='2')
+        fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted\nExamples:\n    python3 plotme.py -f file -g bar\nDefault: line", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
+        fileHandler.add_argument("-hd", "--header", help="Ignores lines starting with # in the input file (see -f)\nExamples:\n    python3 plotme.py -f file -hd False\nDefault: True", default=True, choices=['True', 'False'])
         markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
-        markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nExamples:\n    python3 plotme.py -f file -y 2,3 -s vH\n    python3 plotme.py -f file -y 2-6 -s vHddv\n    python3 plotme.py -f file -y 2-6 -s v\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)", default=None)
-        markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: int\nExamples:\n    python3 plotme.py -f file -d 3", default=None)
-        markers.add_argument("-ss", "--symbolSize", help="Size of each symbol.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -s v -ss 15", default=None)
+        markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nExamples:\n    python3 plotme.py -f file -y 2,3 -s vH\n    python3 plotme.py -f file -y 2-6 -s vHddv\n    python3 plotme.py -f file -y 2-6 -s v\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nDefault: o(circle)", default=None)
+        markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: int\nExamples:\n    python3 plotme.py -f file -d 3\nDefault: 1", default=None)
+        markers.add_argument("-ss", "--symbolSize", help="Size of each symbol.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -s v -ss 15\nDefault: 20", default=None)
         aesthetic = self.parser.add_argument_group("Image parameters","Arguments that handle color and other image features")
-        aesthetic.add_argument("-p", "--setPalette", help="Graph color palette\nExamples:\n    python3 plotme.py -f file -p deep", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
-        aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -bgc black\n    python3 plotme.py -f file -bgc '#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="lightgrey")
-        aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file '#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default="grey")
-        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted abscissa(s) in the scatter and line plots.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green\n    python3 plotme.py -f file -y 2,4 -c '#ff701E','#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples", default=None)
-        aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image (Bounding Box).\nValid arguments: (float,float) in inches\nExamples:\n    python3 plotme.py -f file -fig 192,108", default=None)
-        aesthetic.add_argument("-st", "--hideSpine", help="Removes the spines from the graph\nExamples:\n    python3 plotme.py -f file -st True", default='True', choices=['True', 'False'])
-        aesthetic.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -l 15", default=None)
+        aesthetic.add_argument("-p", "--setPalette", help="Graph color palette\nExamples:\n    python3 plotme.py -f file -p deep\nDefault: colorblind", default="colorblind",  choices=['deep', 'pastel', 'muted', 'bright', 'dark', 'colorblind'])
+        aesthetic.add_argument("-bgc", "--bgColor", help="Changes the color of the background.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -bgc black\n    python3 plotme.py -f file -bgc '#ff701E'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples\nDefault: lightgrey", default="lightgrey")
+        aesthetic.add_argument("-gc", "--gColor", help="Changes the color of the graph`s grid.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file '#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples\nDefault: grey", default="grey")
+        aesthetic.add_argument("-c", "--colors", help="Selects the colors of the plotted y-axes in the scatter and line plots.\nValid arguments: 'red','black','lightyellow','#abc','#ff701E'\nExamples:\n    python3 plotme.py -f file -y 2,4 -c yellow,green\n    python3 plotme.py -f file -y 2,4 -c '#ff701E','#abc'\nSee https://matplotlib.org/stable/tutorials/colors/colors.html for more examples\nDefault: cycles colormap", default=None)
+        aesthetic.add_argument("-fig", "--figSize", help="Size of the graph and the exported image (Bounding Box).\nValid arguments: (float,float) in inches\nExamples:\n    python3 plotme.py -f file -fig 192,108\nDefault: 6,5", default=None)
+        aesthetic.add_argument("-st", "--hideSpine", help="Removes the spines from the graph\nExamples:\n    python3 plotme.py -f file -st True\nDefault: True", default='True', choices=['True', 'False'])
+        aesthetic.add_argument("-l", "--lineWidth", help="Size of the line on a Line plot.\nValid arguments: float\nExamples:\n    python3 plotme.py -f file -l 15\nDefault: 1", default=None)
         text = self.parser.add_argument_group("Text/Font arguments", "Parameters that handle the texts in the plot")
-        text.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -pt 'Tile of the plot'", default=None)
-        text.add_argument("-xl", "--xLabel", help="Label of the abscissa.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -xl 'label of x'", default=None)
-        text.add_argument("-yl", "--yLabel", help="Label of the ordinate(s).\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -yl 'label of y'", default=None)
-        text.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes\nExamples:\n    python3 plotme.py -f file -g pie -pl slice1,'another slice',3", default=None)
-        text.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int\nExamples:\n    python3 plotme.py -f file -fs 14", default=None)
+        text.add_argument("-pt", "--plotTitle", help="Title that appears at the top of the plot.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -pt 'Tile of the plot'\nDefault: None", default=None)
+        text.add_argument("-xl", "--xLabel", help="Label of the x-axis.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -xl 'label of x'\nDefault: header of the x-axis", default=None)
+        text.add_argument("-yl", "--yLabel", help="Label of the y-axis.\nValid arguments: string\nExamples:\n    python3 plotme.py -f file -yl 'label of y'\nDefault: header of the last y-axis", default=None)
+        text.add_argument("-pl", "--pieLabel", help="Labels of the data in the pie plot.\nValid arguments: strings, the number must match the number of y indexes\nExamples:\n    python3 plotme.py -f file -g pie -pl slice1,'another slice',3\nDefault: 0 - (n-1), n = lenght of y-axis", default=None)
+        text.add_argument("-fs","--fontSize",help="Size of the font used in the graph itself.\nValid arguments: int\nExamples:\n    python3 plotme.py -f file -fs 14\nDefault: 10", default=None)
         
         # and put the values in the class variables
         args = self.parser.parse_args()
@@ -156,7 +156,7 @@ class Plot:
             count = self.colors.split(',')
             self.colors = itertools.cycle(count)
             if len(count) != len(yAxis):
-                raise Exception("The number of declared colors is different than the number of abscissas")
+                raise Exception("The number of declared colors is different than the number of y-axes")
 
         # get the list of the parameters
         args = self.getParameters(yAxis, cmap, columns[self.x])
@@ -211,6 +211,9 @@ class Plot:
                         symb.pop(0)
                     args['marker'] = symb[0]
                 i+=1
+            ax1.legend(data.head(1))
+            if not self.yLabel:
+                plt.ylabel("")
 
         # finally, export the file
         ax1.set_facecolor(self.bgColor)
@@ -366,7 +369,7 @@ class Plot:
                     path = removeName
 
             #if the output name only contains the extension
-            if containsExt.match(outName):
+            elif containsExt.match(outName):
                 #checks if the fileName contains an extension
                 if containsNameExt.match(fName):
                     removeName = fName
@@ -396,6 +399,7 @@ class Plot:
             #search if given extension is supported
             if re.search("^(eps|jpeg|jpg|pdf|pgf|png|ps|raw|rgba|svg|svgz|tif|tiff)$", ext):
                 fig.savefig(newName + add + ext, bbox_inches="tight", facecolor=fig.get_facecolor(), transparent=True)
+                print(f'File {newName}{add}{ext} saved succesfully')
             else:
                 print("Extension not supported")
 
@@ -411,8 +415,7 @@ class Plot:
                 if rmvName != '':
                     fName=rmvName
             fig.savefig(fName+'Plot'+outName, bbox_inches="tight", facecolor=fig.get_facecolor(), transparent=True)
-
-        print(f'File {fName}Plot{outName} saved succesfully')
+            print(f'File {fName}Plot{outName} saved succesfully')
 
 if __name__ == "__main__":
     instance = Plot(cmd=True)

@@ -177,16 +177,20 @@ class Plot:
                 data.plot(kind='line', ax=ax1, y=y, marker=markers[0], color = next(colors), **args)
                 if len(markers)>1:
                     markers.pop(0)
+                ax1.legend()
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':
             data.plot(kind='bar', ax=ax1, **args)
         elif self.graphType == 'scatter':
             yAx = args['y']
+            ys = yAx.copy()
             args.pop('y')
             symb = 0
             i=0
-            norm = nrm(vmin=-1,vmax=1,vcenter=0)
+            if not self.colors:
+                norm = nrm(vmin=-1,vmax=1,vcenter=0)
+                color=-1.1
             if 'marker' in args:
                 symb = args['marker']
                 args['marker'] = symb[0]
@@ -195,7 +199,6 @@ class Plot:
                 dist = args['markevery']
                 args.pop('markevery')
                 data = data.loc[::dist,:]
-            color=-1.1
             while yAx:
                 if not self.colors:
                     color+=0.2
@@ -211,7 +214,7 @@ class Plot:
                         symb.pop(0)
                     args['marker'] = symb[0]
                 i+=1
-            ax1.legend(data.head(1))
+            ax1.legend(ys)
             if not self.yLabel:
                 plt.ylabel("")
 

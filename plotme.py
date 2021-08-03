@@ -177,7 +177,6 @@ class Plot:
                 data.plot(kind='line', ax=ax1, y=y, marker=markers[0], color = next(colors), **args)
                 if len(markers)>1:
                     markers.pop(0)
-                ax1.legend()
         elif self.graphType == 'pie':
             data.plot(kind='pie', ax=ax1, **args)
         elif self.graphType == 'bar':
@@ -207,7 +206,7 @@ class Plot:
                     data.plot(kind='scatter', ax=ax1, y=yAx[0], c=np.repeat(color,len(data)), norm=norm, **args)
                     fig.delaxes(fig.axes[-1])
                 else:
-                    data.plot(kind='scatter', ax=ax1, y=yAx[0], c=next(self.colors), **args)
+                    data.plot(kind='scatter', ax=ax1, y=yAx[0], c=next(self.colors), colorbar=False, **args)
                 yAx.pop(0)
                 if symb:
                     if len(symb)>1:

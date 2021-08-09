@@ -150,7 +150,7 @@ class Plot:
         else:
             self.hideSpine = False
         self.ci = args.confidenceInterval
-        self.auc = args.AreaUnderCurve
+        self.auc = args.areaUnderCurve
 
 
     def getAxisName(self, df, y, x):

@@ -1,16 +1,22 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
-import argparse
-import re
-import ast
-import numpy as np
-import itertools
 from matplotlib.colors import ListedColormap
 try:
     from matplotlib.colors import TwoSlopeNorm as nrm
 except:
     from matplotlib.colors import DivergingNorm as nrm
+
+import argparse
+
+import re
+import ast
+
+import pandas as pd
+import numpy as np
+import itertools
+
+from integral import Integral
+
 
 class Plot:
     def __init__(self, 
@@ -37,6 +43,7 @@ class Plot:
                 colors = None,
                 hideSpine = True,
                 ci=False,
+                auc=False,
                 cmd=False ):
 
         if cmd:
@@ -71,6 +78,7 @@ class Plot:
             self.colors = colors
             self.hideSpine = hideSpine
             self.ci = ci
+            self.auc = auc
         self.colorMap = {"lightblue": -1, "yellow": 0.75, "grey": 0.5, "lightpink": 0.25, "brown": 0.1,
                          "pink": -0.1, "orange": -0.25, "green": -0.5, "dark yellow": -0.75, "blue": -1}
 
@@ -87,6 +95,7 @@ class Plot:
         fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted\nExamples:\n    python3 plotme.py -f file -g bar\nDefault: line", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
         fileHandler.add_argument("-hd", "--header", help="Ignores lines starting with # in the input file (see -f)\nExamples:\n    python3 plotme.py -f file -hd False\nDefault: True", default=True, choices=['True', 'False'])
         fileHandler.add_argument("-ci", "--confidenceInterval", help="Makes a confidence interval over the whole database, the effect is to put a shadow representing the error", action='store_true', default=False)
+        fileHandler.add_argument("-auc", "--AreaUnderCurve", help="Calculate the area under the curve given the file(s) and the y index(es)", action="store_true", default=False)
         markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
         markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nExamples:\n    python3 plotme.py -f file -y 2,3 -s vH\n    python3 plotme.py -f file -y 2-6 -s vHddv\n    python3 plotme.py -f file -y 2-6 -s v\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nDefault: o(circle)", default=None)
         markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: int\nExamples:\n    python3 plotme.py -f file -d 3\nDefault: 1", default=None)
@@ -141,6 +150,7 @@ class Plot:
         else:
             self.hideSpine = False
         self.ci = args.confidenceInterval
+        self.auc = args.AreaUnderCurve
 
 
     def getAxisName(self, df, y, x):
@@ -201,10 +211,15 @@ class Plot:
         # finally, makes the plot
         for vals in df:
             color=next(colors)
+
             vals.plot(kind='line', ax=ax1, marker=markers[0], color=color, **args)
             plt.fill_between(vals['x'], vals['mean']+vals['std'], vals['mean']-vals['std'], color=color, alpha=0.15, rasterized=True)
+            
             if len(markers)>1:
                 markers.pop(0)
+        
+        # put the legend of the first csv file
+        ax1.legend(yAxis[0])
 
 
     def checkConditions(self):
@@ -216,47 +231,57 @@ class Plot:
                 raise Exception("The number of declared colors is different than the number of y-axes")
 
         # if the conditions for a confidence interval plot doesn't fit, show the error
-        if len(self.data)>1 and (self.graphType != 'line' or self.ci!=True):
-            raise NotImplementedError('More than one file is allowed only for line plots with confidence intervals')
+        if len(self.data)>1:
+            if self.auc:
+                pass
+            elif (self.graphType != 'line' or self.ci!=True):
+                raise NotImplementedError('More than one file are allowed only for line plots with confidence intervals and for finding the area under the curve')
 
 
     def plotControl(self):
         # makes sure all the conditions match and are allowed
         self.checkConditions()
         
-        # initialize the figure and ax
-        fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
-
+        if self.auc:
+            intg = Integral(
+                file=self.data,
+                y=self.y,
+                x=self.x
+                )
+            intg.prettify( intg.integrate_files() )
 
         # check if it is a confidence interval plot
-        if self.ci:
-            # plot the confidence interval
-            self.plotCI( self.data,  self.y, ax1)
-    
         else:
-            # this kinds of plots below only accepts one file
-            data = self.data[0]
-
-            # call the right kind of graph
-            if self.graphType == 'line':
-                self.plotLine( data, fig, ax1 )
-            elif self.graphType == 'bar':
-                self.plotBar( data, fig, ax1 )
-            elif self.graphType == 'pie':
-                self.plotPie( data, fig, ax1 )
-            elif self.graphType == 'scatter':
-                self.plotScatter( data, fig, ax1 )
-
-
-        # add the extra features to the plot
-        self.ImageConfigurations(fig, ax1)
-
-        # default value: shows plot, else: only saves the image
-        if self.output == '.pdf':           
-            plt.show()
+            # initialize the figure and ax
+            fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
+            if self.ci:
+                # plot the confidence interval
+                self.plotCI( self.data,  self.y, ax1)
         
-        # saves the figure
-        self.exportFile(self.output, self.fileName[0], fig)
+            else:
+                # this kinds of plots below only accepts one file
+                data = self.data[0]
+
+                # call the right kind of graph
+                if self.graphType == 'line':
+                    self.plotLine( data, fig, ax1 )
+                elif self.graphType == 'bar':
+                    self.plotBar( data, fig, ax1 )
+                elif self.graphType == 'pie':
+                    self.plotPie( data, fig, ax1 )
+                elif self.graphType == 'scatter':
+                    self.plotScatter( data, fig, ax1 )
+
+
+            # add the extra features to the plot
+            self.ImageConfigurations(fig, ax1)
+
+            # default value: shows plot, else: only saves the image
+            if self.output == '.pdf':           
+                plt.show()
+            
+            # saves the figure
+            self.exportFile(self.output, self.fileName[0], fig)
 
 
     def ImageConfigurations(self, fig, ax1):

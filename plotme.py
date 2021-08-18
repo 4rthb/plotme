@@ -1,6 +1,7 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, to_hex
 try:
     from matplotlib.colors import TwoSlopeNorm as nrm
 except:
@@ -15,7 +16,7 @@ import pandas as pd
 import numpy as np
 import itertools
 
-from integral import Integral
+from scipy.integrate import simps, trapz
 
 
 class Plot:
@@ -42,7 +43,7 @@ class Plot:
                 gColor = "grey",
                 colors = None,
                 hideSpine = True,
-                ci=False,
+                sd=False,
                 auc=False,
                 cmd=False ):
 
@@ -77,7 +78,7 @@ class Plot:
             self.gColor = gColor
             self.colors = colors
             self.hideSpine = hideSpine
-            self.ci = ci
+            self.sd = sd
             self.auc = auc
         self.colorMap = {"lightblue": -1, "yellow": 0.75, "grey": 0.5, "lightpink": 0.25, "brown": 0.1,
                          "pink": -0.1, "orange": -0.25, "green": -0.5, "dark yellow": -0.75, "blue": -1}
@@ -94,8 +95,9 @@ class Plot:
         fileHandler.add_argument("-y", "--y", help="The y-axis of the plot.\nValid arguments: Indexes of columns(value, list [ex: 2,3,4] or sequences [ex: 2-4])\nExamples:\n    python3 plotme.py -f file -y 5-7\n    python3 plotme.py -f file -y 5,6,7\nDefault: 2", default='2')
         fileHandler.add_argument("-g","--graphType", help="Type of graph that will be plotted\nExamples:\n    python3 plotme.py -f file -g bar\nDefault: line", default="line",  choices=['line', 'pie', 'bar', 'scatter'])
         fileHandler.add_argument("-hd", "--header", help="Ignores lines starting with # in the input file (see -f)\nExamples:\n    python3 plotme.py -f file -hd False\nDefault: True", default=True, choices=['True', 'False'])
-        fileHandler.add_argument("-ci", "--confidenceInterval", help="Makes a confidence interval over the whole database, the effect is to put a shadow representing the error\nExamples:\n    python3 plotme.py -f file1 file2 file3 [...] -y 2 -ci\n    python3 plotme.py -f file1 file2 file3 -y 2-4,7 -ci\nDefault: False", action='store_true', default=False)
+        fileHandler.add_argument("-sd", "--standardDeviation", help="Makes a plot of the mean and the stand deaviation pointwise over the whole database, the effect is to put a shadow representing the error\nExamples:\n    python3 plotme.py -f file1 file2 file3 [...] -y 2 -sd\n    python3 plotme.py -f file1 file2 file3 -y 2-4,7 -sd\nDefault: False", action='store_true', default=False)
         fileHandler.add_argument("-auc", "--areaUnderCurve", help="Calculate the area under the curve given the file(s) and the y index(es)\nExamples:\n    python3 plotme.py -f file -y 4-6 -auc\n    python3 plotme.py -f file1 file2 file3 [...] -y 3,4 -auc\nDefault: False", action="store_true", default=False)
+        fileHandler.add_argument("-aucm", "--areaUnderCurveMethod", type=str, action='store', choices=['simpson', 'trapz', 'mean'], default='simpson', help='The method that is goind to be used for the auc calculation. It can be the simpson rule, the trapezoidal rule or the mean of them.\nExamples:\n    python3 plotme.py -f file -y 2-4 -auc -aucm simpson\n    python3 plotme.py -f file -y 5 -auc -aucm trapz')
         markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
         markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nExamples:\n    python3 plotme.py -f file -y 2,3 -s vH\n    python3 plotme.py -f file -y 2-6 -s vHddv\n    python3 plotme.py -f file -y 2-6 -s v\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nDefault: o(circle)", default=None)
         markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: int\nExamples:\n    python3 plotme.py -f file -d 3\nDefault: 1", default=None)
@@ -149,9 +151,9 @@ class Plot:
             self.hideSpine = True
         else:
             self.hideSpine = False
-        self.ci = args.confidenceInterval
+        self.sd = args.standardDeviation
         self.auc = args.areaUnderCurve
-
+        self.aucm = args.areaUnderCurveMethod
 
     def getAxisName(self, df, y, x):
         columns = df.columns
@@ -168,7 +170,7 @@ class Plot:
         return columns, yColumns, xColumn
 
 
-    def plotCI(self, data, yInput, ax1):
+    def plotSD(self, data, yInput, ax1):
         # gets all the columns and y-columns name
         cols, yAxis = [], []
         for df in data:
@@ -234,7 +236,7 @@ class Plot:
         if len(self.data)>1:
             if self.auc:
                 pass
-            elif (self.graphType != 'line' or self.ci!=True):
+            elif (self.graphType != 'line' or self.sd!=True):
                 raise NotImplementedError('More than one file are allowed only for line plots with confidence intervals and for finding the area under the curve')
 
 
@@ -246,7 +248,8 @@ class Plot:
             intg = Integral(
                 file=self.data,
                 y=self.y,
-                x=self.x
+                x=self.x,
+                method=self.aucm
                 )
             intg.prettify( intg.integrate_files() )
 
@@ -254,9 +257,9 @@ class Plot:
         else:
             # initialize the figure and ax
             fig, ax1 = plt.subplots(facecolor=self.bgColor, constrained_layout=True)
-            if self.ci:
+            if self.sd:
                 # plot the confidence interval
-                self.plotCI( self.data,  self.y, ax1)
+                self.plotSD( self.data,  self.y, ax1)
         
             else:
                 # this kinds of plots below only accepts one file
@@ -359,8 +362,7 @@ class Plot:
         symb = 0
         i=0
         if not self.colors:
-            norm = nrm(vmin=-1,vmax=1,vcenter=0)
-            color=-1.1
+            color=itertools.cycle( args['colormap'].colors )
         if 'marker' in args:
             symb = args['marker']
             args['marker'] = symb[0]
@@ -371,11 +373,7 @@ class Plot:
             data = data.loc[::dist,:]
         while yColumns:
             if not self.colors:
-                color+=0.2
-                if color>1:
-                    color-=2
-                data.plot(kind='scatter', ax=ax1, y=yColumns[0], c=np.repeat(color,len(data)), norm=norm, **args)
-                fig.delaxes(fig.axes[-1])
+                data.plot(kind='scatter', ax=ax1, y=yColumns[0], color=next(color) ,colorbar=False, **args)
             else:
                 data.plot(kind='scatter', ax=ax1, y=yColumns[0], c=next(self.colors), colorbar=False, **args)
             yColumns.pop(0)
@@ -579,6 +577,112 @@ class Plot:
                     fName=rmvName
             fig.savefig(fName+'Plot'+outName, bbox_inches="tight", facecolor=fig.get_facecolor(), transparent=True)
             print(f'File {fName}Plot{outName} saved succesfully')
+
+
+class Integral:
+
+    def __init__(self, file=None, y=1, x=0, method='simpson',cmd=False) -> None:
+        if cmd:
+            self.prs = argparse.ArgumentParser(description='Integrate Module - For calculating the area under the curve.')
+            
+            # set all the arguments
+            self.prs.add_argument('-f', '--files', nargs='+', type=str, required=True, help='Path to the data file. It can be multiple files.')
+            self.prs.add_argument('-y', '--yAxis', nargs='+', type=int, default=[2], help='Index for the y-axis. Can be more than 1 value (Index starting in 1).')
+            self.prs.add_argument('-x', '--xAxis', type=int, default=1, help='Index for the x-axis.')
+            self.prs.add_argument('-m', '--method', action='store', choices=['simpson', 'trapz', 'mean'], default='simpson', help='The method that is goind to be used for the calculation. It can be the simpson rule or the trapezoidal rule.')
+            # parse
+            self.args = self.prs.parse_args()
+
+            self.files = self.open_files( self.args.files )
+            self.y = self._convert_human_indexing(self.args.yAxis)
+            self.x = self._convert_human_indexing(self.args.xAxis)
+            self.method = self.args.method
+        else:
+            # if the software is being used as a module
+            self.files = file if isinstance(file, list) else [file]
+            self.y = y if isinstance(y,list) else [y]
+            self.y = self.y
+            self.x = x
+            self.method = method
+
+
+    def _convert_human_indexing(self, val):
+        if isinstance(val, int):
+            # if the value is less than 1, it means the index doesn't exist
+            if val<1:
+                raise ValueError('Invalid Value. The indexing start in 1, make sure your value can be an index.')
+            # otherwise, return the human like indexing
+            return val-1
+        elif isinstance(val, list):
+            # if it's a list, iterate over all the values, doing elementwise the same as above
+            for index in range(len(val)):
+                if val[index]<1:
+                    raise ValueError('Invalid Value. The indexing start in 1, make sure your value can be an index.')
+                val[index] -= 1
+            return val
+        else:
+            raise TypeError('Invalid Type.\nThe type for y-axis or x-axis is invalid')
+        
+
+    def open_files(self, files):
+        handlers = []
+        # stores all the dataframes in handlers array
+        for fs in files:
+            handlers.append( pd.read_csv( fs ) )
+        
+        return handlers
+
+
+    def _calculate(self, file, y, x):
+        # sets the arguments
+        args = {
+            'y': file[ file.columns[y] ] * 5,
+            'x': file[ file.columns[x] ]
+        }
+        # the result is calculated using the method chosen before
+        if self.method == 'simpson':
+            return simps(**args)
+        elif self.method == 'trapz':
+            return trapz(**args)
+        else:
+            return (simps(**args) + trapz(**args) ) / 2
+
+
+    def integrate_files( self ):
+        file_areas = []
+        # for every file, calculate the area and store in the file_areas array, to be returned afterwards
+        for file in self.files:
+            area = []
+            for y in self.y:
+                # calculate the result
+                result = self._calculate( file, y, self.x )
+                # check if the result is nan, if so, raise an exception
+                if np.isnan(result):
+                    raise ValueError('Some column have unsuported values to calculate the Area Under the Curve.')
+                # otherwise, append the result
+                area.append( result )
+            
+            file_areas.append( area[:] )
+            area.clear()
+
+        return file_areas
+
+
+    def stats(self):
+        # return the pandas description
+        for file in self.files:
+            return file.describe()
+
+
+    def prettify(self, int_arrs):
+        try:
+            fname = self.args.files
+        except:
+            fname = [f'File {str(i)}' for i in range(len(self.files))]
+        for i, file in enumerate(fname):
+            print( f'\n{f"VALUES FOR {file}":^30}' )
+            for j, y in enumerate(self.y):
+                print(f'Y[{y+1}]: {int_arrs[i][j]}')
 
 
 if __name__ == "__main__":

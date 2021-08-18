@@ -26,8 +26,9 @@
 | _--yLabel_         | _-yl_    | column name   | Label of the y-axis                                   | `string`                                               |
 | _--pieLabel_       | _-pl_    | none          | Label each slice of the pie                           | `string1,string2,...,stringN`                          |
 | _--fontSize_       | _-fs_    | auto          | Size of the font used in the graph itself             | `int`                                                  |
-| _--confidenceInterval_  | _-ci_ | False       | Makes a confidence interval over the whole database, the effect is to put a shadow representing the error | `True` or `False` |
+| _--standardDeviation_  | _-sd_ | False       | Makes a plot of the mean and the stand deaviation pointwise over the whole database, the effect is to put a shadow representing the error | `True` or `False` |
 | _--areaUnderCurve_  | _-auc_  | False         | Calculate the area under the curve given the file(s) and the y index(es) | `True` or `False`                   |
+| _--areaUnderCurveMethod_  | _-aucm_  | 'simpson'       | The method that is goind to be used for the auc calculation. It can be the simpson rule or the trapezoidal rule. | 'simpson', 'trapz' or 'mean' |
 
 * Column indexes begin at 1, not 0
 ** See https://matplotlib.org/stable/tutorials/colors/colors.html for more examples
@@ -73,8 +74,8 @@
    - yLabel:         `python3 plotme.py -f file -yl 'label of y'`
    - pieLabel:       `python3 plotme.py -f file -g pie -pl slice1,'another slice',3`
    - fontSize:       `python3 plotme.py -f file -fs 14`
-   - ci:             `python3 plotme.py -f file1 file2 file3 [...] -y 2 -ci` 
-                     `python3 plotme.py -f file1 file2 file3 -y 2-4,7 -ci`
+   - sd:             `python3 plotme.py -f file1 file2 file3 [...] -y 2 -sd` 
+                     `python3 plotme.py -f file1 file2 file3 -y 2-4,7 -sd`
    - auc:            `python3 plotme.py -f file -y 4-6 -auc`
                      `python3 plotme.py -f file1 file2 file3 [...] -y 3,4 -auc`
 

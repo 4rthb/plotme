@@ -9,6 +9,8 @@ except:
 
 import argparse
 
+import os
+
 import re
 import ast
 
@@ -45,6 +47,8 @@ class Plot:
                 hideSpine = True,
                 sd=False,
                 auc=False,
+                fileExtension='csv',
+                comment="#",
                 cmd=False ):
 
         if cmd:
@@ -80,6 +84,8 @@ class Plot:
             self.hideSpine = hideSpine
             self.sd = sd
             self.auc = auc
+            self.extension = fileExtension
+            self.comment = comment
         self.colorMap = {"lightblue": -1, "yellow": 0.75, "grey": 0.5, "lightpink": 0.25, "brown": 0.1,
                          "pink": -0.1, "orange": -0.25, "green": -0.5, "dark yellow": -0.75, "blue": -1}
 
@@ -88,7 +94,7 @@ class Plot:
         #parses arguments
         self.parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description="""I can plot 4 types of graphs: Bar, Line, Pie and Scatter""")
         fileHandler = self.parser.add_argument_group("File handling arguments","The arguments that handle the data from the input file")
-        fileHandler.add_argument("-f","--fileName", nargs='+', help="Name of the files that contains the data for the graph: name1.extension name2.extension ...", required=True)
+        fileHandler.add_argument("-f","--fileName", nargs='+', help="Name of the files that contains the data for the graph: name1.extension name2.extension ..., it can be a directory as well, as long as there are csv files in it", required=True)
         fileHandler.add_argument("-sep", "--separator", help="Defines the separator used in the input file, for parsing purposes.\nValid arguments: ' ', '\\t', regular expressions and other file delimiters\nExamples:\n    python3 plotme.py -f file.txt -sep \\t\nDefault: Comma(,)", default=',')
         fileHandler.add_argument("-o","--output", help="Name and/or extension of the output file.\nValid arguments: '.png', 'name', 'name.png'\nExamples:\n    python3 plotme.py -f file -o outputFile\n    python3 plotme.py -f file -o .tiff\n    python3 plotme.py -f file -o export.jpeg\nDefault: .pdf", default=".pdf")
         fileHandler.add_argument("-x", "--x", help="The x-axis of the plot.\nValid arguments: Indexes of columns\nExamples:\n    python3 plotme.py -f file -x 1\nDefault: 1", default=1)
@@ -98,6 +104,8 @@ class Plot:
         fileHandler.add_argument("-sd", "--standardDeviation", help="Makes a plot of the mean and the stand deaviation pointwise over the whole database, the effect is to put a shadow representing the error\nExamples:\n    python3 plotme.py -f file1 file2 file3 [...] -y 2 -sd\n    python3 plotme.py -f file1 file2 file3 -y 2-4,7 -sd\nDefault: False", action='store_true', default=False)
         fileHandler.add_argument("-auc", "--areaUnderCurve", help="Calculate the area under the curve given the file(s) and the y index(es)\nExamples:\n    python3 plotme.py -f file -y 4-6 -auc\n    python3 plotme.py -f file1 file2 file3 [...] -y 3,4 -auc\nDefault: False", action="store_true", default=False)
         fileHandler.add_argument("-aucm", "--areaUnderCurveMethod", type=str, action='store', choices=['simpson', 'trapz', 'mean'], default='simpson', help='The method that is goind to be used for the auc calculation. It can be the simpson rule, the trapezoidal rule or the mean of them.\nExamples:\n    python3 plotme.py -f file -y 2-4 -auc -aucm simpson\n    python3 plotme.py -f file -y 5 -auc -aucm trapz')
+        fileHandler.add_argument("-ext", "--fileExtension", type=str, action='store', default='.csv', help="File extension to be chosen if a directory is passed.\nExamples:\n    python3 plotme.py -f dir -y 3-5 -sd -ext txt")
+        fileHandler.add_argument("-com", "--comment", type=str, default="#", action="store", help="The character that will indicate if a line should be treated as comment.\nExamples\n    python3 plotme.py -f file -com @")
         markers = self.parser.add_argument_group("Marker arguments","Arguments that handle the markers")
         markers.add_argument("-s", "--symbols", help="Shape of the symbols used.\nValid arguments: Lists [ex: vhD] or values\nExamples:\n    python3 plotme.py -f file -y 2,3 -s vH\n    python3 plotme.py -f file -y 2-6 -s vHddv\n    python3 plotme.py -f file -y 2-6 -s v\nFor valid markers: https://matplotlib.org/stable/api/markers_api.html)\nDefault: o(circle)", default=None)
         markers.add_argument("-d", "--distBetSymbols", help="Distance between each symbol\nValid Arguments: int\nExamples:\n    python3 plotme.py -f file -d 3\nDefault: 1", default=None)
@@ -124,6 +132,7 @@ class Plot:
         self.graphType = args.graphType
         self.output = args.output 
         self.sep = args.separator
+        self.extension = args.fileExtension
         if int(args.x)>0:
             self.x = int(args.x) - 1
         else:
@@ -138,6 +147,7 @@ class Plot:
         self.plotTitle = args.plotTitle
         self.xLabel = args.xLabel
         self.yLabel = args.yLabel
+        self.comment = args.comment
         self.pieLabel = args.pieLabel
         if args.header == 'False':
             self.header = False
@@ -154,6 +164,7 @@ class Plot:
         self.sd = args.standardDeviation
         self.auc = args.areaUnderCurve
         self.aucm = args.areaUnderCurveMethod
+
 
     def getAxisName(self, df, y, x):
         columns = df.columns
@@ -238,6 +249,12 @@ class Plot:
                 pass
             elif (self.graphType != 'line' or self.sd!=True):
                 raise NotImplementedError('More than one file are allowed only for line plots with confidence intervals and for finding the area under the curve')
+
+        # check if all the dfs have the same number of rows
+        rows = len(self.data[0].index)
+        for df in self.data:
+            if len(df.index) != rows:
+                raise Exception("The files that were given have differents numbers of rows, which is incoherent for the analysis")
 
 
     def plotControl(self):
@@ -327,6 +344,7 @@ class Plot:
             data.plot(kind='line', ax=ax1, y=y, marker=markers[0], color = next(colors), **args)
             if len(markers)>1:
                 markers.pop(0)
+        ax1.legend()
 
 
     def plotPie(self, data, fig, ax1):
@@ -448,7 +466,6 @@ class Plot:
     def openFile(self, filenames):
 
         args = {}
-
         # if the first row is not of labels, include it as actual data
         if not self.header:
             args['header'] = None
@@ -457,10 +474,23 @@ class Plot:
         if self.sep == ' ' or self.sep == '':
             self.sep = '\ '
 
+        # if it a directory is passed as the -f argument
+        # store all the csv files in them to afterwards open them
+        tmp_f = []
+        for fs in filenames:
+            if os.path.isdir(fs):
+                tmp_f.extend([ f'{fs}/{f}' for f in os.listdir(fs) if self.extension in f ])
+            else:
+                tmp_f.append(fs)
+        filenames = tmp_f
+
+        # make sure there are files to read
+        assert len(filenames)>0, "At least one file should be passed"
+
         # read all the files
         dfs = []
         for fname in filenames:
-            dfs.append( pd.read_csv(fname, sep=self.sep, comment='#', engine='python', **args) )
+            dfs.append( pd.read_csv(fname, sep=self.sep, comment=self.comment, engine='python', **args) )
         
         return dfs
 

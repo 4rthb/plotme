@@ -28,7 +28,10 @@
 | _--fontSize_       | _-fs_    | auto          | Size of the font used in the graph itself             | `int`                                                  |
 | _--standardDeviation_  | _-sd_ | False       | Makes a plot of the mean and the stand deaviation pointwise over the whole database, the effect is to put a shadow representing the error | `True` or `False` |
 | _--areaUnderCurve_  | _-auc_  | False         | Calculate the area under the curve given the file(s) and the y index(es) | `True` or `False`                   |
-| _--areaUnderCurveMethod_  | _-aucm_  | 'simpson'       | The method that is goind to be used for the auc calculation. It can be the simpson rule or the trapezoidal rule. | 'simpson', 'trapz' or 'mean' |
+| _--areaUnderCurveMethod_  | _-aucm_  | 'simpson'       | The method that is goind to be used for the auc calculation. It can be the simpson rule, the trapezoidal rule or the mean of them. | 'simpson', 'trapz' or 'mean' |
+| _--fileExtension_       | _-ext_    | '.csv'          | File extension to be chosen if a directory is passed.             | `string`                        |
+| _--comment_           | _-com_    | #         |  The character that will indicate if a line should be treated as comment. | `string` |
+
 
 * Column indexes begin at 1, not 0
 ** See https://matplotlib.org/stable/tutorials/colors/colors.html for more examples
@@ -78,6 +81,8 @@
                      `python3 plotme.py -f file1 file2 file3 -y 2-4,7 -sd`
    - auc:            `python3 plotme.py -f file -y 4-6 -auc`
                      `python3 plotme.py -f file1 file2 file3 [...] -y 3,4 -auc`
+   - ext:            `python3 plotme.py -f dir -y 3-5 -sd -ext txt`
+   - com:            `python3 plotme.py -f file -com @`
 
 ## Using it as an imported module
 
